@@ -2319,15 +2319,106 @@ const data = [{
                     this.setOZEValues(windPower, solarPower, ozePercentage, foundData ? 'PSE API' : 'Estymacja');
                     
                     console.log(`✅ REAL DATA: OZE data updated - Wind: ${windPower.toFixed(0)}MW, Solar: ${solarPower.toFixed(0)}MW, Total: ${ozePercentage.toFixed(1)}%`);
-                    
-                } catch (error) {
-                    console.error('❌ Błąd aktualizacji danych OZE:', error);
-                    updateDebugPanel(`Błąd OZE: ${error.message}`, 'error');
-                    this.setOZEPlaceholders('Błąd przetwarzania');
-                }
+                   } catch (error) {
+                console.error('❌ Błąd aktualizacji danych OZE:', error);
+                updateDebugPanel(`Błąd OZE: ${error.message}`, 'error');
+                this.setOZEPlaceholders('Błąd przetwarzania');
             }
-            
-            setOZEValues(windPower, solarPower, ozePercentage, dataSource) {
+        }
+        
+        // ✅ WSTAW TUTAJ NOWĄ FUNKCJĘ:
+        updateRealOZEData(ozeData) {
+            try {
+                console.log('🌱 Processing REAL OZE data from PSE API:', ozeData.length, 'records');
+                updateDebugPanel(`Przetwarzanie ${ozeData.length} rekordów OZE...`, 'info');
+                
+                if (ozeData.length > 0) {
+                    console.log('📊 Sample OZE data structure:', ozeData[0]);
+                }
+                
+                let windPower = 0;
+                let solarPower = 0;
+                let biomassPower = 0;
+                let hydroPower = 0;
+                let foundRealData = false;
+                
+                // Szukaj prawdziwych danych w strukturze OZE
+                ozeData.forEach((item, index) => {
+                    try {
+                        // Sprawdź różne możliwe pola
+                        const possibleTypeFields = ['resource_type', 'fuel_type', 'technology', 'source_name'];
+                        const possiblePowerFields = ['current_power', 'power', 'generation', 'capacity', 'output'];
+                        
+                        let resourceType = null;
+                        let power = 0;
+                        
+                        // Znajdź typ zasobu
+                        for (const field of possibleTypeFields) {
+                            if (item[field]) {
+                                resourceType = item[field].toString().toUpperCase();
+                                break;
+                            }
+                        }
+                        
+                        // Znajdź moc/generację
+                        for (const field of possiblePowerFields) {
+                            const value = item[field];
+                            if (value !== null && value !== undefined && !isNaN(parseFloat(value))) {
+                                power = parseFloat(value);
+                                break;
+                            }
+                        }
+                        
+                        if (resourceType && power > 0) {
+                            foundRealData = true;
+                            
+                            if (resourceType.includes('WIATR') || resourceType.includes('WIND')) {
+                                windPower += power;
+                            } else if (resourceType.includes('PV') || resourceType.includes('SOLAR') || resourceType.includes('SŁONECZ')) {
+                                solarPower += power;
+                            } else if (resourceType.includes('BIOMASA') || resourceType.includes('BIOMASS') || resourceType.includes('BIOGAS')) {
+                                biomassPower += power;
+                            } else if (resourceType.includes('HYDRO') || resourceType.includes('WODNA')) {
+                                hydroPower += power;
+                            }
+                        }
+                    } catch (itemError) {
+                        console.warn(`⚠️ Error processing OZE record ${index}:`, itemError);
+                    }
+                });
+                
+                if (foundRealData) {
+                    const totalOZE = windPower + solarPower + biomassPower + hydroPower;
+                    const totalGeneration = 25000; // Average Polish generation
+                    const ozePercentage = Math.min((totalOZE / totalGeneration) * 100, 100);
+                    
+                    console.log('✅ REAL OZE data processed successfully:', {
+                        wind: windPower.toFixed(0),
+                        solar: solarPower.toFixed(0),
+                        biomass: biomassPower.toFixed(0),
+                        hydro: hydroPower.toFixed(0),
+                        total: totalOZE.toFixed(0),
+                        percentage: ozePercentage.toFixed(1)
+                    });
+                    
+                    this.setOZEValues(windPower, solarPower, ozePercentage, 'PRAWDZIWE PSE OZE API');
+                    updateDebugPanel(`OZE REAL: W=${windPower.toFixed(0)}MW, S=${solarPower.toFixed(0)}MW, ${ozePercentage.toFixed(1)}%`, 'success');
+                } else {
+                    console.log('⚠️ No valid OZE data found in response');
+                    updateDebugPanel('Brak poprawnych danych w OZE API', 'error');
+                    this.setOZEPlaceholders('Niepoprawne dane OZE API');
+                }
+                
+            } catch (error) {
+                console.error('❌ Error processing REAL OZE data:', error);
+                updateDebugPanel(`Błąd przetwarzania OZE: ${error.message}`, 'error');
+                this.setOZEPlaceholders('Błąd przetwarzania OZE');
+            }
+        }
+        
+        setOZEValues(windPower, solarPower, ozePercentage, dataSource) {
+            // reszta kodu... 
+             
                 try {
                     const windEl = document.getElementById('windPower');
                     const solarEl = document.getElementById('solarPower');
