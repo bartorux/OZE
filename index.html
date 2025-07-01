@@ -1331,82 +1331,141 @@
                 const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
                 let processed = [];
                 
-                if (!rawData || rawData.length === 0) {
-                    console.log('❌ REAL DATA: Brak surowych danych do przetworzenia');
-                    updateDebugPanel('Brak danych do przetworzenia', 'error');
+                try {
+                    if (!rawData || rawData.length === 0) {
+                        console.log('❌ REAL DATA: Brak surowych danych do przetworzenia');
+                        updateDebugPanel('Brak danych do przetworzenia', 'error');
+                        return [];
+                    }
+                    
+                    console.log(`🔄 REAL DATA: Przetwarzanie ${rawData.length} surowych rekordów z PSE API`);
+                    updateDebugPanel(`Przetwarzanie ${rawData.length} rekordów...`, 'info');
+                    
+                    // Log first few records to understand structure
+                    if (rawData.length > 0) {
+                        console.log('📊 Przykład struktury danych PSE:', rawData[0]);
+                        const fields = Object.keys(rawData[0]);
+                        console.log('📊 Dostępne pola:', fields);
+                        updateDebugPanel(`Dostępne pola: ${fields.slice(0, 5).join(', ')}...`, 'info');
+                        
+                        // Check if required fields exist
+                        const hasRequiredField = fields.includes('req_pow_res');
+                        console.log(`📊 Pole req_pow_res: ${hasRequiredField ? 'ZNALEZIONE' : 'BRAK'}`);
+                        updateDebugPanel(`req_pow_res: ${hasRequiredField ? '✅' : '❌'}`, hasRequiredField ? 'success' : 'error');
+                    }
+                    
+                    // Generate full 72 hours from midnight today using REAL DATA
+                    console.log('🕐 REAL DATA: Generowanie 72 godzin z rzeczywistymi danymi PSE...');
+                    updateDebugPanel('Generowanie 72h danych...', 'info');
+                    
+                    const maxProcessed = 72; // Safety limit
+                    let successCount = 0;
+                    let errorCount = 0;
+                    
+                    for (let i = 0; i < maxProcessed; i++) {
+                        try {
+                            const timestamp = new Date(startOfToday.getTime() + i * 60 * 60 * 1000);
+                            
+                            const dataIndex = i % Math.max(rawData.length, 1);
+                            const item = rawData[dataIndex] || rawData[0];
+                            
+                            // More robust checking
+                            const reqPowerRes = item?.req_pow_res;
+                            if (reqPowerRes !== null && reqPowerRes !== undefined && !isNaN(parseFloat(reqPowerRes))) {
+                                let available = this.getAvailableReserve(item);
+                                
+                                if (available === 0 || isNaN(available)) {
+                                    available = parseFloat(reqPowerRes) + 1000;
+                                }
+                                
+                                if (!isNaN(available) && !isNaN(parseFloat(reqPowerRes))) {
+                                    const timeStr = this.formatDateTime(timestamp);
+                                    
+                                    processed.push({
+                                        time: timestamp,
+                                        timeStr: timeStr,
+                                        reserve: available,
+                                        required: parseFloat(reqPowerRes)
+                                    });
+                                    successCount++;
+                                    
+                                    // Progress logging every 24 hours
+                                    if ((i + 1) % 24 === 0) {
+                                        console.log(`📅 Przetworzono dzień ${Math.floor(i / 24) + 1}/3`);
+                                        updateDebugPanel(`Dzień ${Math.floor(i / 24) + 1}/3 ukończony`, 'info');
+                                    }
+                                } else {
+                                    errorCount++;
+                                    console.warn(`⚠️ Nieprawidłowe wartości w rekordzie ${i}: available=${available}, required=${reqPowerRes}`);
+                                }
+                            } else {
+                                errorCount++;
+                                console.warn(`⚠️ Brak pola req_pow_res w rekordzie ${i}:`, item);
+                                
+                                // Prevent infinite logging
+                                if (errorCount > 5) {
+                                    console.log(`⚠️ Zbyt wiele błędów (${errorCount}), przerywam szczegółowe logowanie`);
+                                    updateDebugPanel(`Błędy w danych: ${errorCount}/${i+1}`, 'error');
+                                }
+                            }
+                        } catch (itemError) {
+                            errorCount++;
+                            console.error(`❌ Błąd przetwarzania rekordu ${i}:`, itemError);
+                            
+                            // Prevent crash
+                            if (errorCount > 10) {
+                                console.error('❌ Zbyt wiele błędów, przerywam przetwarzanie');
+                                updateDebugPanel(`PRZERWANO: za dużo błędów (${errorCount})`, 'error');
+                                break;
+                            }
+                        }
+                    }
+                    
+                    console.log(`✅ REAL DATA: Wygenerowano ${processed.length} punktów z rzeczywistymi danymi PSE`);
+                    console.log(`📊 Statystyki: ${successCount} sukces, ${errorCount} błędów`);
+                    updateDebugPanel(`Ukończono: ${processed.length} punktów (${successCount}✅/${errorCount}❌)`, 'success');
+                    
+                    if (processed.length > 0) {
+                        console.log(`📅 REAL DATA: Zakres czasowy: ${processed[0].timeStr} do ${processed[processed.length - 1].timeStr}`);
+                        updateDebugPanel(`Zakres: ${processed[0].timeStr} - ${processed[processed.length - 1].timeStr}`, 'info');
+                    }
+                    
+                    return processed.sort((a, b) => a.time - b.time);
+                    
+                } catch (error) {
+                    console.error('❌ KRYTYCZNY błąd w processData:', error);
+                    updateDebugPanel(`KRYTYCZNY błąd: ${error.message}`, 'error');
                     return [];
                 }
-                
-                console.log(`🔄 REAL DATA: Przetwarzanie ${rawData.length} surowych rekordów z PSE API`);
-                updateDebugPanel(`Przetwarzanie ${rawData.length} rekordów...`, 'info');
-                
-                // Log first few records to understand structure
-                if (rawData.length > 0) {
-                    console.log('📊 Przykład struktury danych PSE:', rawData[0]);
-                    const fields = Object.keys(rawData[0]);
-                    console.log('📊 Dostępne pola:', fields);
-                    updateDebugPanel(`Dostępne pola: ${fields.slice(0, 5).join(', ')}...`, 'info');
-                }
-                
-                // Generate full 72 hours from midnight today using REAL DATA
-                console.log('🕐 REAL DATA: Generowanie 72 godzin z rzeczywistymi danymi PSE...');
-                
-                for (let i = 0; i < 72; i++) {
-                    const timestamp = new Date(startOfToday.getTime() + i * 60 * 60 * 1000);
-                    
-                    const dataIndex = i % Math.max(rawData.length, 1);
-                    const item = rawData[dataIndex] || rawData[0];
-                    
-                    if (item && item.req_pow_res !== null && item.req_pow_res !== undefined) {
-                        let available = this.getAvailableReserve(item);
-                        
-                        if (available === 0 || isNaN(available)) {
-                            available = parseFloat(item.req_pow_res) + 1000;
-                        }
-                        
-                        if (!isNaN(available) && !isNaN(parseFloat(item.req_pow_res))) {
-                            const timeStr = this.formatDateTime(timestamp);
-                            
-                            processed.push({
-                                time: timestamp,
-                                timeStr: timeStr,
-                                reserve: available,
-                                required: parseFloat(item.req_pow_res)
-                            });
-                        }
-                    } else {
-                        console.warn(`⚠️ Brak pola req_pow_res w rekordzie ${i}:`, item);
-                    }
-                }
-                
-                console.log(`✅ REAL DATA: Wygenerowano ${processed.length} punktów z rzeczywistymi danymi PSE`);
-                updateDebugPanel(`Wygenerowano ${processed.length} punktów danych na 72h`, 'success');
-                
-                if (processed.length > 0) {
-                    console.log(`📅 REAL DATA: Zakres czasowy: ${processed[0].timeStr} do ${processed[processed.length - 1].timeStr}`);
-                }
-                
-                return processed.sort((a, b) => a.time - b.time);
             }
             
             getAvailableReserve(item) {
                 // Try different field names that might contain available reserve data
                 const possibleFields = [
                     'surplus_cap_avail_tso',
-                    'avail_cap_gen_units_stor_prov',
+                    'avail_cap_gen_units_stor_prov', 
+                    'avail_cap_gen_units_stor_prov_tso',
                     'available_capacity',
                     'surplus_capacity',
                     'reserve_available'
                 ];
                 
                 for (const field of possibleFields) {
-                    if (item[field] !== null && item[field] !== undefined && !isNaN(parseFloat(item[field]))) {
-                        console.log(`📊 Using field '${field}' for available reserve: ${item[field]}`);
-                        return parseFloat(item[field]);
+                    const value = item[field];
+                    if (value !== null && value !== undefined && !isNaN(parseFloat(value))) {
+                        const parsedValue = parseFloat(value);
+                        // Only log first few successful finds to avoid spam
+                        if (Math.random() < 0.1) { // 10% chance to log
+                            console.log(`📊 Using field '${field}' for available reserve: ${parsedValue}`);
+                        }
+                        return parsedValue;
                     }
                 }
                 
-                console.log('⚠️ No valid available reserve field found, using fallback calculation');
+                // Log warning only occasionally to avoid spam
+                if (Math.random() < 0.05) { // 5% chance to log
+                    console.log('⚠️ No valid available reserve field found in item:', Object.keys(item));
+                }
                 return 0;
             }
             
@@ -1767,22 +1826,26 @@
                 try {
                     console.log('🔄 REFRESH: Rozpoczynam pobieranie wszystkich REAL DATA');
                     
-                    // Fetch all data in parallel
-                    const [reservesData, weatherData, generationData] = await Promise.all([
-                        this.fetchData(),                                    // ✅ REAL reserves from PSE API
-                        this.fetchWeatherData(),                            // ✅ REAL weather from OpenWeatherMap
-                        this.fetchPSEData(this.API_ENDPOINTS.generation)    // ✅ REAL generation from PSE API
-                    ]);
+                    // Fetch reserves data first (most important)
+                    const reservesData = await this.fetchData();
                     
+                    // Fetch other data in parallel (but don't wait for all)
+                    const weatherPromise = this.fetchWeatherData();
+                    const generationPromise = this.fetchPSEData(this.API_ENDPOINTS.generation).catch(err => {
+                        console.log('⚠️ Generation API failed:', err.message);
+                        updateDebugPanel('Generation API niedostępne', 'error');
+                        return [];
+                    });
+                    
+                    // Wait for critical data
                     const now = new Date().toLocaleString('pl-PL');
                     
                     if (reservesData && reservesData.length > 0) {
-                        console.log(`✅ SUKCES REAL DATA: ${reservesData.length} punktów rezerw + weather + generation`);
+                        console.log(`✅ SUKCES REAL DATA: ${reservesData.length} punktów rezerw`);
                         updateDebugPanel(`SUKCES: ${reservesData.length} punktów danych załadowano`, 'success');
                         
                         this.isOnline = true;
                         this.allData = reservesData;
-                        this.generationData = generationData;
                         
                         const dayData = this.getDataForDay(this.currentDayOffset);
                         this.drawChart(dayData);
@@ -1792,13 +1855,27 @@
                         this.updateAlerts(dayData);
                         this.updateQuickStats(dayData);
                         
-                        // Update OZE cards with real data if available
-                        this.updateOZEData(generationData);
-                        
                         this.updateStatus('online', `PSE API | ${reservesData.length} punktów`);
                         if (lastUpdateEl) {
                             lastUpdateEl.textContent = now.split(' ')[1].substring(0, 5);
                         }
+                        
+                        // Handle optional data in background
+                        Promise.all([weatherPromise, generationPromise]).then(([weatherData, generationData]) => {
+                            console.log('📊 Background data loaded:', { weather: !!weatherData, generation: generationData?.length || 0 });
+                            
+                            if (generationData && generationData.length > 0) {
+                                this.generationData = generationData;
+                                this.updateOZEData(generationData);
+                                updateDebugPanel(`Dodatkowo: ${generationData.length} rekordów generacji`, 'success');
+                            }
+                            
+                            // Load placeholder charts for other tabs
+                            this.loadPlaceholderCharts();
+                        }).catch(err => {
+                            console.log('⚠️ Background data loading failed:', err);
+                        });
+                        
                     } else {
                         console.log('❌ REAL DATA: Nie otrzymano danych rezerw');
                         updateDebugPanel('BŁĄD: Nie otrzymano danych rezerw z PSE API', 'error');
@@ -1820,110 +1897,231 @@
                 }
             }
             
+            loadPlaceholderCharts() {
+                // Grid Tab - Load chart placeholder
+                const gridChart = document.getElementById('gridLoadChart');
+                if (gridChart && currentTab === 'grid') {
+                    this.createPlaceholderChart('gridLoadChart', '🔌 Obciążenie KSE', 'Brak implementacji - wymaga API kse-load');
+                }
+                
+                // Market Tab - Price chart placeholder  
+                const priceChart = document.getElementById('priceChart');
+                if (priceChart && currentTab === 'market') {
+                    this.createPlaceholderChart('priceChart', '💰 Ceny energii TGE', 'Brak implementacji - wymaga API energy-prices');
+                }
+                
+                // Forecast Tab - Forecast chart placeholder
+                const forecastChart = document.getElementById('forecastChart');
+                if (forecastChart && currentTab === 'forecast') {
+                    this.createPlaceholderChart('forecastChart', '🔮 Prognoza OZE', 'Brak implementacji - wymaga dodatkowych API');
+                }
+                
+                // OZE Mix Chart - Basic chart with sample data
+                const ozeMixChart = document.getElementById('ozeMixChart');
+                if (ozeMixChart && currentTab === 'renewable') {
+                    this.createOZEMixChart();
+                }
+            }
+            
+            createPlaceholderChart(elementId, title, message) {
+                const element = document.getElementById(elementId);
+                if (!element) return;
+                
+                // Create simple Plotly chart with message
+                const data = [{
+                    x: [1, 2, 3, 4, 5],
+                    y: [10, 20, 15, 25, 18],
+                    type: 'scatter',
+                    mode: 'lines+markers',
+                    name: 'Placeholder',
+                    line: { color: '#bdc3c7', dash: 'dot' }
+                }];
+                
+                const layout = {
+                    title: title,
+                    annotations: [{
+                        text: message,
+                        xref: 'paper',
+                        yref: 'paper', 
+                        x: 0.5,
+                        y: 0.5,
+                        showarrow: false,
+                        font: { size: 16, color: '#7f8c8d' }
+                    }],
+                    showlegend: false,
+                    margin: { t: 40, r: 20, b: 40, l: 40 }
+                };
+                
+                Plotly.newPlot(elementId, data, layout, { displayModeBar: false });
+            }
+            
+            createOZEMixChart() {
+                // Create pie chart showing estimated Polish energy mix
+                const data = [{
+                    values: [45, 25, 15, 10, 5],
+                    labels: ['Węgiel', 'Gaz', 'Wiatr', 'Słońce', 'Inne OZE'],
+                    type: 'pie',
+                    marker: {
+                        colors: ['#34495e', '#f39c12', '#3498db', '#f1c40f', '#27ae60']
+                    }
+                }];
+                
+                const layout = {
+                    title: 'Szacunkowy mix energetyczny Polski',
+                    showlegend: true,
+                    legend: { orientation: 'h', y: -0.1 },
+                    margin: { t: 40, r: 20, b: 60, l: 20 }
+                };
+                
+                Plotly.newPlot('ozeMixChart', data, layout, { displayModeBar: false });
+            }
+            
             updateOZEData(generationData) {
-                if (!generationData || generationData.length === 0) {
-                    console.log('⚠️ Brak danych generacji OZE');
-                    updateDebugPanel('Brak danych generacji OZE', 'error');
-                    // Set placeholder values
-                    document.getElementById('windPower').textContent = '-- MW';
-                    document.getElementById('solarPower').textContent = '-- MW';
-                    document.getElementById('ozePercentage').textContent = '--%';
-                    
-                    // Update trends
-                    document.getElementById('windTrend').innerHTML = '<span>📡</span> Brak danych PSE API';
-                    document.getElementById('solarTrend').innerHTML = '<span>☀️</span> Brak danych PSE API';
-                    document.getElementById('ozeTrend').innerHTML = '<span>🌱</span> Brak danych PSE API';
-                    return;
-                }
-                
-                console.log(`🌱 REAL DATA: Aktualizuję dane OZE z ${generationData.length} rekordów PSE`);
-                updateDebugPanel(`Przetwarzanie ${generationData.length} rekordów generacji...`, 'info');
-                
-                // Log generation data structure for debugging
-                if (generationData.length > 0) {
-                    console.log('📊 Przykład struktury danych generacji:', generationData[0]);
-                    const fields = Object.keys(generationData[0]);
-                    console.log('📊 Dostępne pola generacji:', fields);
-                }
-                
-                // Extract OZE data from PSE generation data
-                let windPower = 0;
-                let solarPower = 0;
-                let totalOZE = 0;
-                
-                // Try to extract real values from PSE data structure
-                // Try various field names that might contain fuel type and generation data
-                const possibleFuelFields = ['fuel_type', 'type', 'source', 'technology'];
-                const possibleGenerationFields = ['generation', 'power', 'output', 'production'];
-                
-                generationData.forEach(item => {
-                    let fuelType = null;
-                    let generation = 0;
-                    
-                    // Find fuel type field
-                    for (const field of possibleFuelFields) {
-                        if (item[field]) {
-                            fuelType = item[field].toString().toUpperCase();
-                            break;
-                        }
+                try {
+                    if (!generationData || generationData.length === 0) {
+                        console.log('⚠️ Brak danych generacji OZE');
+                        updateDebugPanel('Brak danych generacji OZE', 'error');
+                        // Set placeholder values
+                        this.setOZEPlaceholders('Brak danych PSE API');
+                        return;
                     }
                     
-                    // Find generation field
-                    for (const field of possibleGenerationFields) {
-                        if (item[field] !== null && item[field] !== undefined && !isNaN(parseFloat(item[field]))) {
-                            generation = parseFloat(item[field]);
-                            break;
-                        }
+                    console.log(`🌱 REAL DATA: Aktualizuję dane OZE z ${generationData.length} rekordów PSE`);
+                    updateDebugPanel(`Przetwarzanie ${generationData.length} rekordów generacji...`, 'info');
+                    
+                    // Log generation data structure for debugging
+                    if (generationData.length > 0) {
+                        console.log('📊 Przykład struktury danych generacji:', generationData[0]);
+                        const fields = Object.keys(generationData[0]);
+                        console.log('📊 Dostępne pola generacji:', fields);
                     }
                     
-                    if (fuelType && generation > 0) {
-                        if (fuelType.includes('WIATR') || fuelType.includes('WIND')) {
-                            windPower += generation;
-                            console.log(`🌪️ Found wind power: ${generation} MW`);
-                        }
-                        if (fuelType.includes('PV') || fuelType.includes('SOLAR') || fuelType.includes('SŁONECZ')) {
-                            solarPower += generation;
-                            console.log(`☀️ Found solar power: ${generation} MW`);
-                        }
-                    }
-                });
-                
-                // If no specific OZE data found, estimate based on typical Polish mix
-                if (windPower === 0 && solarPower === 0) {
-                    console.log('⚠️ Brak szczegółowych danych OZE w gen-jw, używam estymacji');
-                    updateDebugPanel('Brak rzeczywistych danych OZE - używam estymacji', 'error');
+                    // Extract OZE data from PSE generation data
+                    let windPower = 0;
+                    let solarPower = 0;
+                    let totalOZE = 0;
+                    let foundData = false;
                     
-                    // Current typical values for Poland (July 2025)
-                    windPower = Math.random() * 4000 + 2000;  // 2-6 GW wind capacity
-                    solarPower = Math.random() * 8000 + 1000; // 1-9 GW solar capacity (day/night cycle)
+                    // Try to extract real values from PSE data structure
+                    const possibleFuelFields = ['fuel_type', 'type', 'source', 'technology', 'resource_type'];
+                    const possibleGenerationFields = ['generation', 'power', 'output', 'production', 'current_generation'];
                     
-                    // Adjust solar based on time of day
-                    const hour = new Date().getHours();
-                    if (hour < 6 || hour > 20) {
-                        solarPower = Math.random() * 100; // Very low at night
+                    generationData.forEach((item, index) => {
+                        try {
+                            let fuelType = null;
+                            let generation = 0;
+                            
+                            // Find fuel type field
+                            for (const field of possibleFuelFields) {
+                                if (item[field]) {
+                                    fuelType = item[field].toString().toUpperCase();
+                                    break;
+                                }
+                            }
+                            
+                            // Find generation field
+                            for (const field of possibleGenerationFields) {
+                                const value = item[field];
+                                if (value !== null && value !== undefined && !isNaN(parseFloat(value))) {
+                                    generation = parseFloat(value);
+                                    break;
+                                }
+                            }
+                            
+                            if (fuelType && generation > 0) {
+                                foundData = true;
+                                if (fuelType.includes('WIATR') || fuelType.includes('WIND')) {
+                                    windPower += generation;
+                                    console.log(`🌪️ Found wind power: ${generation} MW (total: ${windPower})`);
+                                }
+                                if (fuelType.includes('PV') || fuelType.includes('SOLAR') || fuelType.includes('SŁONECZ')) {
+                                    solarPower += generation;
+                                    console.log(`☀️ Found solar power: ${generation} MW (total: ${solarPower})`);
+                                }
+                            }
+                        } catch (itemError) {
+                            console.warn(`⚠️ Błąd przetwarzania rekordu generacji ${index}:`, itemError);
+                        }
+                    });
+                    
+                    // If no specific OZE data found, estimate based on typical Polish mix
+                    if (!foundData || (windPower === 0 && solarPower === 0)) {
+                        console.log('⚠️ Brak szczegółowych danych OZE w gen-jw, używam estymacji');
+                        updateDebugPanel('Brak rzeczywistych danych OZE - używam estymacji', 'error');
+                        
+                        // Current typical values for Poland (July 2025)
+                        windPower = Math.random() * 4000 + 2000;  // 2-6 GW wind capacity
+                        solarPower = Math.random() * 8000 + 1000; // 1-9 GW solar capacity (day/night cycle)
+                        
+                        // Adjust solar based on time of day
+                        const hour = new Date().getHours();
+                        if (hour < 6 || hour > 20) {
+                            solarPower = Math.random() * 100; // Very low at night
+                        } else {
+                            const solarFactor = Math.sin(((hour - 6) / 14) * Math.PI); // Peak at midday
+                            solarPower *= solarFactor;
+                        }
                     } else {
-                        const solarFactor = Math.sin(((hour - 6) / 14) * Math.PI); // Peak at midday
-                        solarPower *= solarFactor;
+                        updateDebugPanel(`Dane OZE: Wiatr=${windPower.toFixed(0)}MW, Solar=${solarPower.toFixed(0)}MW`, 'success');
                     }
-                } else {
-                    updateDebugPanel(`Dane OZE: Wiatr=${windPower.toFixed(0)}MW, Solar=${solarPower.toFixed(0)}MW`, 'success');
+                    
+                    totalOZE = windPower + solarPower;
+                    const totalGeneration = 25000; // Estimated total Polish generation ~25 GW
+                    const ozePercentage = Math.min((totalOZE / totalGeneration) * 100, 100); // Cap at 100%
+                    
+                    // Update OZE cards safely
+                    this.setOZEValues(windPower, solarPower, ozePercentage, foundData ? 'PSE API' : 'Estymacja');
+                    
+                    console.log(`✅ REAL DATA: OZE data updated - Wind: ${windPower.toFixed(0)}MW, Solar: ${solarPower.toFixed(0)}MW, Total: ${ozePercentage.toFixed(1)}%`);
+                    
+                } catch (error) {
+                    console.error('❌ Błąd aktualizacji danych OZE:', error);
+                    updateDebugPanel(`Błąd OZE: ${error.message}`, 'error');
+                    this.setOZEPlaceholders('Błąd przetwarzania');
                 }
-                
-                totalOZE = windPower + solarPower;
-                const totalGeneration = 25000; // Estimated total Polish generation ~25 GW
-                const ozePercentage = (totalOZE / totalGeneration) * 100;
-                
-                // Update OZE cards
-                document.getElementById('windPower').textContent = `${windPower.toFixed(0)} MW`;
-                document.getElementById('solarPower').textContent = `${solarPower.toFixed(0)} MW`;
-                document.getElementById('ozePercentage').textContent = `${ozePercentage.toFixed(1)}%`;
-                
-                // Update trends with real data indicators
-                document.getElementById('windTrend').innerHTML = '<span>💨</span> Dane PSE API';
-                document.getElementById('solarTrend').innerHTML = '<span>☀️</span> Dane PSE API';
-                document.getElementById('ozeTrend').innerHTML = `<span>📈</span> ${ozePercentage.toFixed(1)}% miksu`;
-                
-                console.log(`✅ REAL DATA: OZE data updated - Wind: ${windPower.toFixed(0)}MW, Solar: ${solarPower.toFixed(0)}MW, Total: ${ozePercentage.toFixed(1)}%`);
+            }
+            
+            setOZEValues(windPower, solarPower, ozePercentage, dataSource) {
+                try {
+                    const windEl = document.getElementById('windPower');
+                    const solarEl = document.getElementById('solarPower');
+                    const ozeEl = document.getElementById('ozePercentage');
+                    const windTrendEl = document.getElementById('windTrend');
+                    const solarTrendEl = document.getElementById('solarTrend');
+                    const ozeTrendEl = document.getElementById('ozeTrend');
+                    
+                    if (windEl) windEl.textContent = `${windPower.toFixed(0)} MW`;
+                    if (solarEl) solarEl.textContent = `${solarPower.toFixed(0)} MW`;
+                    if (ozeEl) ozeEl.textContent = `${ozePercentage.toFixed(1)}%`;
+                    
+                    // Update trends with data source indicators
+                    if (windTrendEl) windTrendEl.innerHTML = `<span>💨</span> ${dataSource}`;
+                    if (solarTrendEl) solarTrendEl.innerHTML = `<span>☀️</span> ${dataSource}`;
+                    if (ozeTrendEl) ozeTrendEl.innerHTML = `<span>📈</span> ${ozePercentage.toFixed(1)}% miksu`;
+                } catch (error) {
+                    console.warn('⚠️ Błąd aktualizacji elementów OZE:', error);
+                }
+            }
+            
+            setOZEPlaceholders(reason) {
+                try {
+                    const windEl = document.getElementById('windPower');
+                    const solarEl = document.getElementById('solarPower');
+                    const ozeEl = document.getElementById('ozePercentage');
+                    const windTrendEl = document.getElementById('windTrend');
+                    const solarTrendEl = document.getElementById('solarTrend');
+                    const ozeTrendEl = document.getElementById('ozeTrend');
+                    
+                    if (windEl) windEl.textContent = '-- MW';
+                    if (solarEl) solarEl.textContent = '-- MW';
+                    if (ozeEl) ozeEl.textContent = '--%';
+                    
+                    if (windTrendEl) windTrendEl.innerHTML = `<span>📡</span> ${reason}`;
+                    if (solarTrendEl) solarTrendEl.innerHTML = `<span>☀️</span> ${reason}`;
+                    if (ozeTrendEl) ozeTrendEl.innerHTML = `<span>🌱</span> ${reason}`;
+                } catch (error) {
+                    console.warn('⚠️ Błąd ustawiania placeholderów OZE:', error);
+                }
             }
         }
         
@@ -1941,6 +2139,26 @@
             
             console.log(`📱 Switched to tab: ${tabName}`);
             updateDebugPanel(`Przełączono na zakładkę: ${tabName}`, 'info');
+            
+            // Load content for the tab if app is ready
+            if (app) {
+                setTimeout(() => {
+                    switch(tabName) {
+                        case 'renewable':
+                            app.createOZEMixChart();
+                            break;
+                        case 'grid':
+                            app.createPlaceholderChart('gridLoadChart', '🔌 Obciążenie KSE', 'Funkcja w rozwoju - API kse-load');
+                            break;
+                        case 'market':
+                            app.createPlaceholderChart('priceChart', '💰 Ceny energii TGE', 'Funkcja w rozwoju - API energy-prices');
+                            break;
+                        case 'forecast':
+                            app.createPlaceholderChart('forecastChart', '🔮 Prognoza OZE na 7 dni', 'Funkcja w rozwoju - wymaga dodatkowych API PSE');
+                            break;
+                    }
+                }, 100); // Small delay to ensure DOM is updated
+            }
         }
         
         // Global functions for onclick handlers
