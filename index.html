@@ -2495,8 +2495,8 @@ updateRealOZEData(ozeData) {
                     const reservesData = await this.fetchData();
                     
                     // Fetch all other data in parallel
-                    const weatherPromise = this.fetchWeatherData();
-                 const generationPromise = this.fetchPSEData(this.API_ENDPOINTS.generation, '?$first=200').catch(err => {
+             const weatherPromise = this.fetchWeatherData();
+const generationPromise = this.fetchPSEData(this.API_ENDPOINTS.generation, '?$first=200').catch(err => {
     console.log('⚠️ Generation API failed:', err.message);
     updateDebugPanel('Generation API niedostępne', 'error');
     return [];
@@ -2508,9 +2508,37 @@ const ozePromise = this.fetchPSEData(this.API_ENDPOINTS.oze, '?$first=200').catc
     updateDebugPanel('OZE API niedostępne', 'error');
     return [];
 });
-} catch (error) {
-        console.error('Błąd:', error);
+
+// ✅ POPRAWNE: Promise.all z trzema Promise'ami
+Promise.all([weatherPromise, generationPromise, ozePromise]).then(([weatherData, generationData, ozeData]) => {
+    console.log('📊 Background data loaded:', { 
+        weather: !!weatherData, 
+        generation: generationData?.length || 0,
+        oze: ozeData?.length || 0 
+    });
+    
+    if (generationData && generationData.length > 0) {
+        this.generationData = generationData;
+        this.updateOZEData(generationData);
+        updateDebugPanel(`Dodatkowo: ${generationData.length} rekordów generacji`, 'success');
     }
+    
+    // ✅ Użyj prawdziwych danych OZE jeśli dostępne
+    if (ozeData && ozeData.length > 0) {
+        console.log('🌱 Using REAL OZE data from poze-redoze endpoint');
+        updateDebugPanel(`Prawdziwe dane OZE: ${ozeData.length} rekordów`, 'success');
+        // Tu będzie funkcja updateRealOZEData gdy ją dodamy później
+    }
+    
+    // *** Load REAL charts ***
+    console.log('📊 Loading ALL REAL charts with PSE API data...');
+    this.loadRealCharts();
+    
+}).catch(err => {
+    console.log('⚠️ Background data loading failed:', err);
+    // Still load real charts even if background data fails
+    console.log('📊 Loading real charts despite background data failure...');
+    this.loadRealCharts();
 });
                     
                     const now = new Date().toLocaleString('pl-PL');
