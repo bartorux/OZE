@@ -2508,9 +2508,10 @@ const ozePromise = this.fetchPSEData(this.API_ENDPOINTS.oze, '?$first=200').catc
     updateDebugPanel('OZE API niedostępne', 'error');
     return [];
 });
- } catch (error) {
-    console.error('Błąd:', error);
-}                   });
+} catch (error) {
+        console.error('Błąd:', error);
+    }
+});
                     
                     const now = new Date().toLocaleString('pl-PL');
                     
