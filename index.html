@@ -2319,12 +2319,12 @@ const data = [{
                     this.setOZEValues(windPower, solarPower, ozePercentage, foundData ? 'PSE API' : 'Estymacja');
                     
                     console.log(`✅ REAL DATA: OZE data updated - Wind: ${windPower.toFixed(0)}MW, Solar: ${solarPower.toFixed(0)}MW, Total: ${ozePercentage.toFixed(1)}%`);
-                   } catch (error) {
-                console.error('❌ Błąd aktualizacji danych OZE:', error);
-                updateDebugPanel(`Błąd OZE: ${error.message}`, 'error');
-                this.setOZEPlaceholders('Błąd przetwarzania');
-            }
+                  } catch (error) {
+            console.error('❌ Błąd aktualizacji danych OZE:', error);
+            updateDebugPanel(`Błąd OZE: ${error.message}`, 'error');
+            this.setOZEPlaceholders('Błąd przetwarzania');
         }
+    }
         
         // ✅ WSTAW TUTAJ NOWĄ FUNKCJĘ:
 updateRealOZEData(ozeData) {
