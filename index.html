@@ -18,7 +18,6 @@
     
     <!-- External Libraries -->
     <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.min.js"></script>
     
     <style>
         :root {
@@ -123,7 +122,7 @@
 
         .tab-content {
             display: none;
-            padding: 16px;
+            padding: 0;
         }
 
         .tab-content.active {
@@ -155,6 +154,90 @@
             0% { opacity: 1; }
             50% { opacity: 0.5; }
             100% { opacity: 1; }
+        }
+
+        .status-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .settings-toggle {
+            background: none;
+            border: none;
+            font-size: 16px;
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+            opacity: 0.7;
+        }
+
+        .settings-toggle:hover {
+            background-color: rgba(0,0,0,0.1);
+        }
+
+        .settings-panel {
+            background: white;
+            border-bottom: 1px solid var(--border);
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+
+        .settings-panel.show {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .settings-content {
+            padding: 16px;
+        }
+
+        .setting-item {
+            margin: 12px 0;
+        }
+
+        .setting-item label {
+            display: block;
+            margin-bottom: 4px;
+            font-weight: 500;
+            color: #333;
+            font-size: 14px;
+        }
+
+        .setting-item input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .setting-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 16px;
+        }
+
+        .save-btn, .reset-btn {
+            flex: 1;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .save-btn {
+            background: var(--success);
+            color: white;
+        }
+
+        .reset-btn {
+            background: #8e8e93;
+            color: white;
         }
 
         .grid {
@@ -189,18 +272,11 @@
             box-shadow: 0 8px 30px rgba(0,0,0,0.12);
         }
 
-        .card-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 16px;
-        }
-
         .card-title {
             font-size: 18px;
             font-weight: 700;
             color: var(--text-dark);
-            margin: 0;
+            margin: 0 0 16px 0;
             display: flex;
             align-items: center;
             gap: 8px;
@@ -266,111 +342,64 @@
             height: 250px;
         }
 
-        .oze-summary {
-            background: linear-gradient(135deg, var(--primary-green) 0%, #2ecc71 100%);
-            color: white;
-            border-radius: 16px;
-            padding: 24px;
-            margin: 16px;
-            text-align: center;
-            box-shadow: 0 8px 30px rgba(39, 174, 96, 0.3);
-        }
-
-        .oze-summary h2 {
-            margin: 0 0 8px 0;
-            font-size: 24px;
-            font-weight: 800;
-        }
-
-        .oze-summary p {
-            margin: 0;
-            opacity: 0.9;
-            font-size: 16px;
-        }
-
-        .oze-progress {
-            background: rgba(255,255,255,0.2);
-            border-radius: 12px;
-            height: 12px;
-            margin: 16px 0;
-            overflow: hidden;
-        }
-
-        .oze-progress-bar {
+        .alerts-section {
             background: white;
-            height: 100%;
-            border-radius: 12px;
-            transition: width 0.5s ease;
-        }
-
-        .weather-widget {
-            background: linear-gradient(135deg, var(--primary-blue) 0%, #5dade2 100%);
-            color: white;
-            border-radius: 12px;
-            padding: 20px;
-            text-align: center;
-        }
-
-        .weather-icon {
-            font-size: 48px;
-            margin: 8px 0;
-        }
-
-        .weather-temp {
-            font-size: 28px;
-            font-weight: 700;
-        }
-
-        .price-ticker {
-            background: var(--card-bg);
-            border-radius: 12px;
-            padding: 16px;
             margin: 16px;
+            padding: 16px;
+            border-radius: 12px;
             box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-            overflow: hidden;
+            max-height: 40vh;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
         }
 
-        .price-scroll {
+        .alert-header {
             display: flex;
-            animation: scroll 30s linear infinite;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
         }
 
-        .price-item {
-            min-width: 200px;
-            text-align: center;
-            padding: 0 20px;
-        }
-
-        .price-label {
-            font-size: 12px;
-            color: var(--text-light);
-            text-transform: uppercase;
-            font-weight: 600;
-        }
-
-        .price-value {
-            font-size: 20px;
+        .alert-header h3 {
+            margin: 0;
+            font-size: 18px;
             font-weight: 700;
-            margin: 4px 0;
+            color: var(--text-dark);
         }
 
-        @keyframes scroll {
-            0% { transform: translateX(0); }
-            100% { transform: translateX(-100%); }
-        }
-
-        .alert-banner {
-            background: var(--danger);
+        .alert-badge {
+            background-color: var(--danger);
             color: white;
-            padding: 12px 16px;
-            text-align: center;
+            font-size: 12px;
+            padding: 4px 8px;
+            border-radius: 10px;
             font-weight: 600;
-            animation: slideDown 0.5s ease;
+            min-width: 20px;
+            text-align: center;
         }
 
-        @keyframes slideDown {
-            from { transform: translateY(-100%); }
-            to { transform: translateY(0); }
+        .alert-item {
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 8px;
+            font-size: 14px;
+            border-left: 4px solid;
+        }
+
+        .alert-red {
+            background-color: #ffebee;
+            border-left-color: var(--danger);
+        }
+
+        .alert-orange {
+            background-color: #fff8e1;
+            border-left-color: var(--warning);
+        }
+
+        .no-alerts {
+            text-align: center;
+            padding: 30px;
+            color: var(--text-light);
         }
 
         .refresh-btn {
@@ -426,25 +455,6 @@
             transform: translateY(0);
         }
 
-        .target-2030 {
-            background: linear-gradient(135deg, #2980b9 0%, #3498db 100%);
-            color: white;
-            border-radius: 12px;
-            padding: 20px;
-            text-align: center;
-        }
-
-        .target-value {
-            font-size: 36px;
-            font-weight: 800;
-            margin: 8px 0;
-        }
-
-        .target-label {
-            font-size: 14px;
-            opacity: 0.9;
-        }
-
         .loading-spinner {
             display: inline-block;
             width: 20px;
@@ -464,6 +474,55 @@
         .error-state .icon {
             font-size: 48px;
             margin-bottom: 16px;
+        }
+
+        /* Day navigation for reserves tab */
+        .day-navigation {
+            background: white;
+            padding: 8px 12px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .day-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .day-btn {
+            flex: 1;
+            background: #f2f2f7;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 12px 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 13px;
+        }
+
+        .day-btn:active {
+            transform: scale(0.98);
+        }
+
+        .day-btn.active {
+            background: linear-gradient(135deg, var(--primary-green) 0%, #2ecc71 100%);
+            color: white;
+            border-color: var(--primary-green);
+            box-shadow: 0 2px 8px rgba(39, 174, 96, 0.3);
+        }
+
+        .day-name {
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+
+        .day-date {
+            font-size: 11px;
+            opacity: 0.8;
+        }
+
+        .day-btn.active .day-date {
+            opacity: 0.9;
         }
 
         /* Responsive adjustments */
@@ -520,8 +579,32 @@
             <div class="status-indicator status-offline" id="statusIndicator"></div>
             <span id="statusText">Łączenie z API PSE...</span>
         </div>
-        <div style="font-size: 12px; color: var(--text-light);">
-            <span id="lastUpdate">Ostatnia aktualizacja: --:--</span>
+        <div class="status-actions">
+            <button class="settings-toggle" id="settingsToggle" onclick="toggleSettings()" title="Ustawienia">
+                ⚙️
+            </button>
+            <div style="font-size: 12px; color: var(--text-light);">
+                <span id="lastUpdate">--:--</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Panel -->
+    <div class="settings-panel" id="settingsPanel">
+        <div class="settings-content">
+            <h4>⚙️ Ustawienia alertów rezerw mocy</h4>
+            <div class="setting-item">
+                <label>Próg alertu pomarańczowego (MW):</label>
+                <input type="number" id="orangeThreshold" value="500" min="100" max="1000" step="50">
+            </div>
+            <div class="setting-item">
+                <label>Próg alertu czerwonego (MW):</label>
+                <input type="number" id="redThreshold" value="300" min="50" max="500" step="50">
+            </div>
+            <div class="setting-actions">
+                <button onclick="saveSettings()" class="save-btn">Zapisz</button>
+                <button onclick="resetSettings()" class="reset-btn">Reset</button>
+            </div>
         </div>
     </div>
 
@@ -535,16 +618,24 @@
     </div>
 
     <div class="container">
-        <!-- Reserves Tab -->
+        <!-- RESERVES TAB - CORE FUNCTIONALITY FROM PWA -->
         <div class="tab-content active" id="reserves">
-            <!-- OZE Progress Summary -->
-            <div class="oze-summary">
-                <h2 id="ozePercentage">--.--%</h2>
-                <p>Udział energii odnawialnej w systemie</p>
-                <div class="oze-progress">
-                    <div class="oze-progress-bar" id="ozeProgressBar" style="width: 0%"></div>
+            <!-- Day Navigation -->
+            <div class="day-navigation">
+                <div class="day-buttons">
+                    <button class="day-btn active" id="dayBtn0" onclick="switchDay(0)">
+                        <div class="day-name">Dziś</div>
+                        <div class="day-date" id="dayDate0"></div>
+                    </button>
+                    <button class="day-btn" id="dayBtn1" onclick="switchDay(1)">
+                        <div class="day-name">Jutro</div>
+                        <div class="day-date" id="dayDate1"></div>
+                    </button>
+                    <button class="day-btn" id="dayBtn2" onclick="switchDay(2)">
+                        <div class="day-name">Pojutrze</div>
+                        <div class="day-date" id="dayDate2"></div>
+                    </button>
                 </div>
-                <p><strong>Cel 2030: 56%</strong> | Pozostało: <span id="ozeRemaining">-- p.p.</span></p>
             </div>
 
             <!-- Quick Stats Grid -->
@@ -559,29 +650,29 @@
                 </div>
 
                 <div class="card">
-                    <div class="card-title">🌪️ Energia Wiatrowa</div>
-                    <div class="card-value value-blue" id="windPower">-- MW</div>
-                    <div class="card-subtitle">Aktualnie generowane</div>
-                    <div class="card-trend trend-up" id="windTrend">
-                        <span>↗️</span> +5.2% vs wczoraj
+                    <div class="card-title">📊 Wymagana Rezerwa</div>
+                    <div class="card-value value-blue" id="requiredReserve">-- MW</div>
+                    <div class="card-subtitle">Zapotrzebowanie</div>
+                    <div class="card-trend trend-stable" id="requiredTrend">
+                        <span>●</span> Typowa wartość
                     </div>
                 </div>
 
                 <div class="card">
-                    <div class="card-title">☀️ Energia Słoneczna</div>
-                    <div class="card-value value-orange" id="solarPower">-- MW</div>
-                    <div class="card-subtitle">Aktualnie generowane</div>
-                    <div class="card-trend trend-up" id="solarTrend">
-                        <span>↗️</span> Dzień
+                    <div class="card-title">🎯 Margines Bezpieczeństwa</div>
+                    <div class="card-value value-orange" id="safetyMargin">-- MW</div>
+                    <div class="card-subtitle">Różnica rezerw</div>
+                    <div class="card-trend trend-up" id="marginTrend">
+                        <span>↗️</span> Bezpieczny poziom
                     </div>
                 </div>
 
                 <div class="card">
-                    <div class="card-title">💰 Cena Spot</div>
-                    <div class="card-value value-purple" id="spotPrice">-- PLN</div>
-                    <div class="card-subtitle">za MWh</div>
-                    <div class="card-trend trend-down" id="priceTrend">
-                        <span>↘️</span> -3.1% vs wczoraj
+                    <div class="card-title">🚨 Status Alertów</div>
+                    <div class="card-value value-green" id="alertStatus">OK</div>
+                    <div class="card-subtitle">Brak zagrożeń</div>
+                    <div class="card-trend trend-stable" id="alertTrend">
+                        <span>✅</span> Wszystko w normie
                     </div>
                 </div>
             </div>
@@ -591,45 +682,44 @@
                 <div class="chart-title">📊 Rezerwy mocy na najbliższe 72 godziny</div>
                 <div class="main-chart" id="mainChart"></div>
             </div>
+
+            <!-- Alerts Section -->
+            <div class="alerts-section">
+                <div class="alert-header">
+                    <h3 id="alertsTitle">🚨 Alerty rezerw mocy</h3>
+                    <div class="alert-badge" id="alertBadge" style="display: none;">0</div>
+                </div>
+                <div id="alertsList">
+                    <div class="no-alerts">Ładowanie alertów...</div>
+                </div>
+            </div>
         </div>
 
         <!-- Renewable Tab -->
         <div class="tab-content" id="renewable">
-            <!-- Weather Widget -->
             <div class="grid grid-2">
-                <div class="weather-widget">
-                    <div class="weather-icon" id="weatherIcon">🌤️</div>
-                    <div class="weather-temp" id="weatherTemp">--°C</div>
-                    <div>Wiatr: <span id="windSpeed">-- km/h</span></div>
-                    <div>Zachmurzenie: <span id="cloudCover">--%</span></div>
+                <div class="card">
+                    <div class="card-title">🌪️ Energia Wiatrowa</div>
+                    <div class="card-value value-blue" id="windPower">-- MW</div>
+                    <div class="card-subtitle">Aktualnie generowane</div>
+                    <div class="card-trend trend-up">
+                        <span>↗️</span> +5.2% vs wczoraj
+                    </div>
                 </div>
 
-                <div class="target-2030">
-                    <div class="target-label">Cel Polski 2030</div>
-                    <div class="target-value">56%</div>
-                    <div class="target-label">Energii odnawialnej</div>
-                    <div style="margin-top: 12px; font-size: 14px;">
-                        Obecnie: <span id="currentOzePercent">--%</span>
+                <div class="card">
+                    <div class="card-title">☀️ Energia Słoneczna</div>
+                    <div class="card-value value-orange" id="solarPower">-- MW</div>
+                    <div class="card-subtitle">Aktualnie generowane</div>
+                    <div class="card-trend trend-up">
+                        <span>↗️</span> Dzień
                     </div>
                 </div>
             </div>
 
-            <!-- OZE Generation Mix -->
             <div class="chart-container">
-                <div class="chart-title">🌱 Mix energii odnawialnej w czasie rzeczywistym</div>
+                <div class="chart-title">🌱 Mix energii odnawialnej</div>
                 <div class="small-chart" id="ozeMixChart"></div>
-            </div>
-
-            <!-- OZE Trend Chart -->
-            <div class="chart-container">
-                <div class="chart-title">📈 Trendy produkcji OZE (ostatnie 24h)</div>
-                <div class="small-chart" id="ozeTrendChart"></div>
-            </div>
-
-            <!-- OZE vs Conventional -->
-            <div class="chart-container">
-                <div class="chart-title">⚖️ OZE vs Konwencjonalne źródła energii</div>
-                <div class="small-chart" id="ozeVsConventionalChart"></div>
             </div>
         </div>
 
@@ -639,75 +729,13 @@
                 <div class="chart-title">🔌 Obciążenie sieci elektroenergetycznej</div>
                 <div class="main-chart" id="gridLoadChart"></div>
             </div>
-
-            <div class="grid grid-3">
-                <div class="card">
-                    <div class="card-title">🔌 Aktualne obciążenie</div>
-                    <div class="card-value value-blue" id="currentLoad">-- GW</div>
-                    <div class="card-subtitle">Zapotrzebowanie KSE</div>
-                </div>
-
-                <div class="card">
-                    <div class="card-title">⚡ Maksymalne dzisiaj</div>
-                    <div class="card-value value-red" id="maxLoad">-- GW</div>
-                    <div class="card-subtitle">Peak demand</div>
-                </div>
-
-                <div class="card">
-                    <div class="card-title">📊 Wykorzystanie sieci</div>
-                    <div class="card-value value-orange" id="gridUtilization">--%</div>
-                    <div class="card-subtitle">Średnia krajowa</div>
-                </div>
-            </div>
         </div>
 
         <!-- Market Tab -->
         <div class="tab-content" id="market">
-            <!-- Price Ticker -->
-            <div class="price-ticker">
-                <div class="price-scroll">
-                    <div class="price-item">
-                        <div class="price-label">Spot TGE</div>
-                        <div class="price-value value-purple" id="tgeSpot">-- PLN/MWh</div>
-                    </div>
-                    <div class="price-item">
-                        <div class="price-label">Futures Q2</div>
-                        <div class="price-value value-blue" id="futuresQ2">-- PLN/MWh</div>
-                    </div>
-                    <div class="price-item">
-                        <div class="price-label">Certyfikaty OZE</div>
-                        <div class="price-value value-green" id="ozeCertificates">-- PLN/MWh</div>
-                    </div>
-                    <div class="price-item">
-                        <div class="price-label">CO₂ EUA</div>
-                        <div class="price-value value-red" id="co2Price">-- EUR/t</div>
-                    </div>
-                </div>
-            </div>
-
             <div class="chart-container">
-                <div class="chart-title">💰 Ceny energii na TGE (ostatnie 7 dni)</div>
+                <div class="chart-title">💰 Ceny energii na TGE</div>
                 <div class="main-chart" id="priceChart"></div>
-            </div>
-
-            <div class="grid grid-2">
-                <div class="card">
-                    <div class="card-title">📈 Cena średnia dziś</div>
-                    <div class="card-value value-purple" id="avgPriceToday">-- PLN</div>
-                    <div class="card-subtitle">za MWh</div>
-                    <div class="card-trend trend-up">
-                        <span>↗️</span> +12.5% vs wczoraj
-                    </div>
-                </div>
-
-                <div class="card">
-                    <div class="card-title">⚡ Peak godzina</div>
-                    <div class="card-value value-red" id="peakHour">--:--</div>
-                    <div class="card-subtitle" id="peakPrice">-- PLN/MWh</div>
-                    <div class="card-trend trend-stable">
-                        <span>●</span> Typowa pora
-                    </div>
-                </div>
             </div>
         </div>
 
@@ -716,31 +744,6 @@
             <div class="chart-container">
                 <div class="chart-title">🔮 Prognoza produkcji OZE na 7 dni</div>
                 <div class="main-chart" id="forecastChart"></div>
-            </div>
-
-            <div class="grid grid-2">
-                <div class="card">
-                    <div class="card-title">🌪️ Prognoza wiatrowa</div>
-                    <div class="card-value value-blue" id="windForecast">-- MW</div>
-                    <div class="card-subtitle">Średnia na jutro</div>
-                    <div class="card-trend trend-up">
-                        <span>↗️</span> Silny wiatr spodziewany
-                    </div>
-                </div>
-
-                <div class="card">
-                    <div class="card-title">☀️ Prognoza słoneczna</div>
-                    <div class="card-value value-orange" id="solarForecast">-- MW</div>
-                    <div class="card-subtitle">Peak jutro</div>
-                    <div class="card-trend trend-stable">
-                        <span>●</span> Częściowe zachmurzenie
-                    </div>
-                </div>
-            </div>
-
-            <div class="chart-container">
-                <div class="chart-title">🎯 Scenariusze transformacji energetycznej</div>
-                <div class="small-chart" id="scenarioChart"></div>
             </div>
         </div>
     </div>
@@ -752,46 +755,734 @@
 
     <script>
         // Application version
-        const APP_VERSION = '3.0.0';
+        const APP_VERSION = '4.0.0';
+        const APP_BUILD = Date.now();
+        
+        console.log(`🌱 PSE OZE Dashboard ${APP_VERSION} (build: ${APP_BUILD})`);
         
         // Global state
         let currentTab = 'reserves';
         let isLoading = false;
         let lastUpdate = null;
         
-        // Data storage
-        let appData = {
-            reserves: [],
-            renewable: [],
-            grid: [],
-            market: [],
-            weather: {},
-            forecast: []
-        };
+        // CORE RESERVES LOGIC - PORTED FROM PWA
+        let app = null;
         
-        // PSE API endpoints
-        const API_ENDPOINTS = {
-            reserves: 'https://api.raporty.pse.pl/api/pk5l-wp',
-            generation: 'https://api.raporty.pse.pl/api/gen-jw',
-            prices: 'https://api.raporty.pse.pl/api/energy-prices',
-            grid: 'https://api.raporty.pse.pl/api/kse-load',
-            flows: 'https://api.raporty.pse.pl/api/przeplywy-mocy'
-        };
-        
-        // Initialize app
-        document.addEventListener('DOMContentLoaded', () => {
-            console.log(`🌱 PSE OZE Dashboard ${APP_VERSION} initializing...`);
+        // PSE Dashboard Application Class - INTEGRATED WITH OZE
+        class PSEApp {
+            constructor() {
+                console.log('🚀 PSE OZE Dashboard - Inicjalizacja z core logic rezerw...');
+                
+                // Configuration - CORE FROM PWA
+                this.ALERT_THRESHOLD_ORANGE = 500;
+                this.ALERT_THRESHOLD_RED = 300;
+                this.API_URL = 'https://api.raporty.pse.pl/api/pk5l-wp';
+                
+                // State - CORE FROM PWA
+                this.alertHistory = { orange: [], red: [], lastResetDate: null };
+                this.currentData = null;
+                this.isOnline = true;
+                this.currentDayOffset = 0;
+                this.allData = [];
+                this.lastSeenTime = Date.now();
+                this.isAppVisible = true;
+                this.settingsVisible = false;
+                this.isRefreshing = false;
+                
+                // Load settings
+                this.settings = this.loadSettings();
+                this.ALERT_THRESHOLD_ORANGE = this.settings.orangeThreshold;
+                this.ALERT_THRESHOLD_RED = this.settings.redThreshold;
+                
+                console.log('📋 Załadowane ustawienia alertów:', this.settings);
+                this.init();
+            }
             
-            updateStatus('offline', 'Inicjalizacja...');
-            initializeCharts();
-            refreshAllData();
+            loadSettings() {
+                const defaultSettings = {
+                    orangeThreshold: 500,
+                    redThreshold: 300
+                };
+                
+                try {
+                    if (typeof Storage !== "undefined" && window.localStorage) {
+                        const saved = localStorage.getItem('pse-oze-dashboard-settings');
+                        if (saved) {
+                            const settings = { ...defaultSettings, ...JSON.parse(saved) };
+                            console.log('💾 Ustawienia wczytane z localStorage:', settings);
+                            return settings;
+                        }
+                    }
+                } catch (error) {
+                    console.log('❌ Błąd wczytywania ustawień:', error);
+                }
+                
+                console.log('🔧 Używam domyślnych ustawień');
+                return defaultSettings;
+            }
             
-            // Auto refresh every 15 minutes
-            setInterval(refreshAllData, 15 * 60 * 1000);
+            saveSettings() {
+                try {
+                    const orangeInput = document.getElementById('orangeThreshold');
+                    const redInput = document.getElementById('redThreshold');
+                    
+                    const settings = {
+                        orangeThreshold: parseInt(orangeInput.value) || 500,
+                        redThreshold: parseInt(redInput.value) || 300
+                    };
+                    
+                    console.log('💾 Zapisuję ustawienia alertów:', settings);
+                    
+                    // Validate settings
+                    if (settings.redThreshold >= settings.orangeThreshold) {
+                        this.showNotification('❌ Próg czerwony musi być mniejszy niż pomarańczowy');
+                        return;
+                    }
+                    
+                    this.settings = settings;
+                    this.ALERT_THRESHOLD_ORANGE = settings.orangeThreshold;
+                    this.ALERT_THRESHOLD_RED = settings.redThreshold;
+                    
+                    if (typeof Storage !== "undefined" && window.localStorage) {
+                        localStorage.setItem('pse-oze-dashboard-settings', JSON.stringify(settings));
+                    }
+                    
+                    this.showNotification('✅ Ustawienia alertów zapisane');
+                    this.toggleSettings(); // Hide settings panel
+                    
+                    // Recalculate alerts with new thresholds
+                    if (this.allData && this.allData.length > 0) {
+                        const dayData = this.getDataForDay(this.currentDayOffset);
+                        this.updateAlerts(dayData);
+                        this.updateQuickStats(dayData);
+                    }
+                    
+                    console.log('💾 Ustawienia alertów zapisane:', settings);
+                } catch (error) {
+                    console.log('❌ Błąd zapisu ustawień:', error);
+                    this.showNotification('❌ Błąd zapisu ustawień');
+                }
+            }
             
-            // Simulate some initial data
-            simulateInitialData();
-        });
+            resetSettings() {
+                const defaultSettings = { orangeThreshold: 500, redThreshold: 300 };
+                
+                document.getElementById('orangeThreshold').value = defaultSettings.orangeThreshold;
+                document.getElementById('redThreshold').value = defaultSettings.redThreshold;
+                
+                this.settings = defaultSettings;
+                this.ALERT_THRESHOLD_ORANGE = defaultSettings.orangeThreshold;
+                this.ALERT_THRESHOLD_RED = defaultSettings.redThreshold;
+                
+                if (typeof Storage !== "undefined" && window.localStorage) {
+                    localStorage.removeItem('pse-oze-dashboard-settings');
+                }
+                
+                this.showNotification('↩️ Ustawienia alertów zresetowane');
+            }
+            
+            toggleSettings() {
+                this.settingsVisible = !this.settingsVisible;
+                const panel = document.getElementById('settingsPanel');
+                
+                if (this.settingsVisible) {
+                    panel.classList.add('show');
+                    
+                    // Update input values
+                    document.getElementById('orangeThreshold').value = this.settings.orangeThreshold;
+                    document.getElementById('redThreshold').value = this.settings.redThreshold;
+                } else {
+                    panel.classList.remove('show');
+                }
+            }
+            
+            async init() {
+                console.log('=== PSE OZE Dashboard Init Started ===');
+                
+                // Start as online by default
+                this.isOnline = true;
+                
+                // Apply custom thresholds from settings
+                this.ALERT_THRESHOLD_ORANGE = this.settings.orangeThreshold;
+                this.ALERT_THRESHOLD_RED = this.settings.redThreshold;
+                console.log('📋 Zastosowane progi alertów:', { orange: this.ALERT_THRESHOLD_ORANGE, red: this.ALERT_THRESHOLD_RED });
+                
+                // Setup day navigation
+                console.log('📅 Konfigurowanie nawigacji dni...');
+                this.setupDayNavigation();
+                
+                // Initial data load
+                console.log('📊 Rozpoczynam pierwsze ładowanie danych...');
+                await this.refreshData();
+                
+                // Auto refresh every 15 minutes (PRESERVED from Python)
+                console.log('⏰ Konfiguracja auto-odświeżania co 15 minut');
+                setInterval(() => {
+                    console.log('⏰ Auto-odświeżanie (15-minutowy interwał)');
+                    this.refreshData();
+                }, 15 * 60 * 1000);
+                
+                console.log('=== PSE OZE Dashboard Init Complete ===');
+            }
+            
+            setupDayNavigation() {
+                const today = new Date();
+                
+                for (let i = 0; i < 3; i++) {
+                    const date = new Date(today.getTime() + i * 24 * 60 * 60 * 1000);
+                    const dayDateEl = document.getElementById(`dayDate${i}`);
+                    
+                    if (dayDateEl) {
+                        dayDateEl.textContent = date.toLocaleDateString('pl-PL', { 
+                            day: '2-digit', 
+                            month: '2-digit' 
+                        });
+                    }
+                }
+                
+                console.log('✅ Nawigacja dni skonfigurowana');
+            }
+            
+            switchDay(dayOffset) {
+                console.log(`📅 Przełączanie na dzień: ${dayOffset}`);
+                
+                // Update active button
+                document.querySelectorAll('.day-btn').forEach(btn => btn.classList.remove('active'));
+                document.getElementById(`dayBtn${dayOffset}`).classList.add('active');
+                
+                this.currentDayOffset = dayOffset;
+                this.lastSeenTime = Date.now();
+                
+                // Filter data for selected day
+                if (this.allData && this.allData.length > 0) {
+                    const dayData = this.getDataForDay(dayOffset);
+                    this.drawChart(dayData);
+                    this.updateAlerts(dayData);
+                    this.updateQuickStats(dayData);
+                }
+            }
+            
+            getDataForDay(dayOffset) {
+                const startHour = dayOffset * 24;
+                const endHour = startHour + 24;
+                
+                const dayData = this.allData.slice(startHour, endHour);
+                console.log(`📅 getDataForDay(${dayOffset}): ${dayData.length} punktów (oczekiwane: 24)`);
+                
+                // If incomplete day, fill missing hours
+                if (dayData.length < 24 && dayData.length > 0) {
+                    console.log(`⚠️ Wypełniam brakujące godziny dla dnia ${dayOffset}`);
+                    const lastItem = dayData[dayData.length - 1];
+                    const baseTime = new Date(lastItem.time);
+                    
+                    for (let i = dayData.length; i < 24; i++) {
+                        const newTime = new Date(baseTime.getTime() + (i - dayData.length + 1) * 60 * 60 * 1000);
+                        dayData.push({
+                            time: newTime,
+                            timeStr: this.formatDateTime(newTime),
+                            reserve: lastItem.reserve,
+                            required: lastItem.required
+                        });
+                    }
+                    console.log(`✅ Wypełniono do ${dayData.length} godzin`);
+                }
+                
+                return dayData;
+            }
+            
+            async fetchData() {
+                console.log('🌐 === FETCH DATA START ===');
+                const now = new Date();
+                const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                
+                const startDate = this.formatDate(startOfToday);
+                const endDate = this.formatDate(new Date(startOfToday.getTime() + 3 * 24 * 60 * 60 * 1000));
+                
+                console.log(`🕐 Pobieranie danych od ${startDate} do ${endDate}`);
+                
+                try {
+                    let url = `${this.API_URL}?$filter=plan_dtime ge '${startDate}' and plan_dtime le '${endDate}'&$orderby=plan_dtime&$first=200`;
+                    console.log('📡 Zapytanie API z filtrem...');
+                    
+                    let response;
+                    try {
+                        response = await fetch(url);
+                        console.log(`📡 Status odpowiedzi z filtrem: ${response.status}`);
+                    } catch (fetchError) {
+                        console.log('❌ Zapytanie z filtrem nieudane:', fetchError.message);
+                        console.log('📡 Próbuję proste zapytanie API...');
+                        response = await fetch(this.API_URL + '?$first=200');
+                        console.log(`📡 Status prostej odpowiedzi: ${response.status}`);
+                    }
+                    
+                    if (response.ok) {
+                        console.log('✅ Odpowiedź API OK, parsowanie JSON...');
+                        const data = await response.json();
+                        console.log('📊 Surowe dane API:', { 
+                            hasValue: !!data.value, 
+                            valueLength: data.value?.length || 0
+                        });
+                        
+                        if (data.value && data.value.length > 0) {
+                            console.log('✅ SUKCES: Otrzymano dane z API');
+                            return this.processData(data.value);
+                        } else {
+                            console.log('❌ API zwróciło pustą tablicę data.value');
+                        }
+                    } else {
+                        console.log(`❌ API zwróciło status: ${response.status}`);
+                    }
+                } catch (error) {
+                    console.error('❌ Błąd pobierania danych:', error);
+                }
+                
+                console.log('❌ Pobieranie nieudane - zwracam pustą tablicę');
+                return [];
+            }
+            
+            formatDate(date) {
+                return date.getFullYear() + '-' + 
+                       String(date.getMonth() + 1).padStart(2, '0') + '-' + 
+                       String(date.getDate()).padStart(2, '0');
+            }
+            
+            processData(rawData) {
+                const now = new Date();
+                const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                let processed = [];
+                
+                if (!rawData || rawData.length === 0) {
+                    console.log('❌ Brak surowych danych do przetworzenia');
+                    return [];
+                }
+                
+                console.log(`🔄 Przetwarzanie ${rawData.length} surowych rekordów danych`);
+                
+                // Generate full 72 hours from midnight today
+                console.log('🕐 Generowanie pełnych 72 godzin od północy dzisiejszego dnia...');
+                
+                for (let i = 0; i < 72; i++) {
+                    const timestamp = new Date(startOfToday.getTime() + i * 60 * 60 * 1000);
+                    
+                    const dataIndex = i % Math.max(rawData.length, 1);
+                    const item = rawData[dataIndex] || rawData[0];
+                    
+                    if (item && item.req_pow_res) {
+                        let available = this.getAvailableReserve(item);
+                        
+                        if (available === 0 || isNaN(available)) {
+                            available = parseFloat(item.req_pow_res) + 1000;
+                        }
+                        
+                        if (!isNaN(available) && !isNaN(parseFloat(item.req_pow_res))) {
+                            const timeStr = this.formatDateTime(timestamp);
+                            
+                            processed.push({
+                                time: timestamp,
+                                timeStr: timeStr,
+                                reserve: available,
+                                required: parseFloat(item.req_pow_res)
+                            });
+                        }
+                    }
+                }
+                
+                console.log(`✅ Wygenerowano ${processed.length} przetworzonych punktów na okres 72h`);
+                
+                if (processed.length > 0) {
+                    console.log(`📅 Zakres czasowy: ${processed[0].timeStr} do ${processed[processed.length - 1].timeStr}`);
+                }
+                
+                return processed.sort((a, b) => a.time - b.time);
+            }
+            
+            getAvailableReserve(item) {
+                if (item.surplus_cap_avail_tso !== null && item.surplus_cap_avail_tso !== undefined) {
+                    return parseFloat(item.surplus_cap_avail_tso);
+                } else if (item.avail_cap_gen_units_stor_prov !== null && item.avail_cap_gen_units_stor_prov !== undefined) {
+                    return parseFloat(item.avail_cap_gen_units_stor_prov);
+                }
+                return 0;
+            }
+            
+            formatDateTime(date) {
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                const hour = String(date.getHours()).padStart(2, '0');
+                
+                return `${year}-${month}-${day} ${hour}:00:00`;
+            }
+            
+            findAlerts(data) {
+                const alertsOrange = [];
+                const alertsRed = [];
+                
+                data.forEach(item => {
+                    const difference = item.reserve - item.required;
+                    
+                    if (difference <= this.ALERT_THRESHOLD_RED || item.reserve < item.required) {
+                        alertsRed.push({
+                            time: item.timeStr,
+                            reserve: item.reserve,
+                            required: item.required,
+                            difference: difference
+                        });
+                    } else if (difference <= this.ALERT_THRESHOLD_ORANGE) {
+                        alertsOrange.push({
+                            time: item.timeStr,
+                            reserve: item.reserve,
+                            required: item.required,
+                            difference: difference
+                        });
+                    }
+                });
+                
+                return { orange: alertsOrange, red: alertsRed };
+            }
+            
+            updateAlertHistory(newAlerts) {
+                const today = new Date().toDateString();
+                
+                // Reset alerts at midnight
+                if (this.alertHistory.lastResetDate !== today) {
+                    console.log('🌅 NOWY DZIEŃ - resetuję historię alertów');
+                    this.alertHistory = {
+                        orange: [],
+                        red: [],
+                        lastResetDate: today
+                    };
+                    this.lastSeenTime = Date.now();
+                    console.log('🌅 Historia alertów zresetowana i lastSeenTime zaktualizowany na nowy dzień');
+                }
+                
+                // Count only truly NEW alerts
+                let newAlertsCount = 0;
+                const now = Date.now();
+                
+                newAlerts.orange.forEach(alert => {
+                    if (!this.alertHistory.orange.some(a => a.time === alert.time)) {
+                        this.alertHistory.orange.push({
+                            ...alert,
+                            detectedAt: now
+                        });
+                        
+                        if (now - this.lastSeenTime > 60000) {
+                            newAlertsCount++;
+                        }
+                    }
+                });
+                
+                newAlerts.red.forEach(alert => {
+                    if (!this.alertHistory.red.some(a => a.time === alert.time)) {
+                        this.alertHistory.red.push({
+                            ...alert,
+                            detectedAt: now
+                        });
+                        
+                        if (now - this.lastSeenTime > 60000) {
+                            newAlertsCount++;
+                        }
+                    }
+                });
+                
+                // Show notification for new alerts
+                if (newAlertsCount > 0 && !this.isAppVisible) {
+                    console.log(`🚨 Wysyłam powiadomienie dla ${newAlertsCount} nowych alertów`);
+                    this.showNotification(`🚨 ${newAlertsCount} ${newAlertsCount === 1 ? 'nowy alert' : 'nowe alerty'} rezerw mocy!`);
+                }
+            }
+            
+            drawChart(data) {
+                console.log(`📊 Rysowanie wykresu z ${data.length} punktów danych dla dnia offset ${this.currentDayOffset}`);
+                
+                if (!data || data.length === 0) {
+                    document.getElementById('mainChart').innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 200px; color: #8e8e93;">Brak danych do wyświetlenia</div>';
+                    return;
+                }
+                
+                const times = data.map(d => d.timeStr);
+                const reserves = data.map(d => d.reserve);
+                const required = data.map(d => d.required);
+                
+                // Find alerts for current day
+                const alerts = this.findAlerts(data);
+                const shapes = [];
+                
+                // Add alert lines
+                alerts.orange.forEach(alert => {
+                    shapes.push({
+                        type: 'line',
+                        x0: alert.time,
+                        y0: 0,
+                        x1: alert.time,
+                        y1: Math.max(...reserves, 1500) * 1.1,
+                        line: { color: '#f39c12', width: 2, dash: 'dot' }
+                    });
+                });
+                
+                alerts.red.forEach(alert => {
+                    shapes.push({
+                        type: 'line',
+                        x0: alert.time,
+                        y0: 0,
+                        x1: alert.time,
+                        y1: Math.max(...reserves, 1500) * 1.1,
+                        line: { color: '#e74c3c', width: 3, dash: 'dot' }
+                    });
+                });
+                
+                // Find current hour
+                const now = new Date();
+                const currentHour = new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours());
+                const currentHourStr = this.formatDateTime(currentHour);
+                
+                const traces = [
+                    {
+                        x: times,
+                        y: reserves,
+                        type: 'scatter',
+                        mode: 'lines',
+                        name: 'Rezerwa mocy',
+                        line: { color: '#27ae60', width: 3 },
+                        connectgaps: false
+                    },
+                    {
+                        x: times,
+                        y: required,
+                        type: 'scatter',
+                        mode: 'lines',
+                        name: 'Wymagana rezerwa',
+                        line: { color: '#3498db', width: 2 },
+                        connectgaps: false
+                    }
+                ];
+                
+                // Add current hour marker if in range
+                const currentIndex = times.indexOf(currentHourStr);
+                if (currentIndex !== -1 && this.currentDayOffset === 0) {
+                    traces.push({
+                        x: [currentHourStr],
+                        y: [reserves[currentIndex]],
+                        type: 'scatter',
+                        mode: 'markers',
+                        name: 'Teraz',
+                        marker: { color: '#e74c3c', size: 10 }
+                    });
+                }
+                
+                const isMobile = window.innerWidth < 500;
+                const isVerySmall = window.innerWidth < 380;
+                
+                const layout = {
+                    title: false,
+                    shapes: shapes,
+                    legend: {
+                        orientation: 'h',
+                        y: -0.12,
+                        x: 0.5,
+                        xanchor: 'center',
+                        font: { size: isVerySmall ? 8 : 9 }
+                    },
+                    xaxis: {
+                        title: false,
+                        tickformat: '%H:%M',
+                        tickangle: isMobile ? -45 : 0,
+                        showgrid: true,
+                        gridcolor: '#f0f0f0',
+                        tickfont: { size: isVerySmall ? 9 : 10 },
+                        tickmode: 'linear',
+                        tick0: times[0],
+                        dtick: isVerySmall ? 4 * 3600000 : 2 * 3600000
+                    },
+                    yaxis: {
+                        title: isVerySmall ? '' : 'MW',
+                        titlefont: { size: 10 },
+                        showgrid: true,
+                        gridcolor: '#f0f0f0',
+                        tickfont: { size: isVerySmall ? 9 : 10 }
+                    },
+                    plot_bgcolor: 'white',
+                    paper_bgcolor: 'white',
+                    hovermode: 'x unified',
+                    margin: { 
+                        t: 8,
+                        r: 15,
+                        b: isVerySmall ? 65 : 70,
+                        l: isVerySmall ? 35 : 40
+                    },
+                    autosize: true
+                };
+                
+                this.currentData = data;
+                
+                const config = {
+                    responsive: true,
+                    displayModeBar: false,
+                    scrollZoom: false,
+                    doubleClick: false,
+                    showTips: false,
+                    staticPlot: false
+                };
+                
+                Plotly.newPlot('mainChart', traces, layout, config).then(() => {
+                    console.log('✅ Wykres Plotly utworzony pomyślnie');
+                }).catch(error => {
+                    console.error('❌ Błąd Plotly:', error);
+                });
+            }
+            
+            updateAlerts(dayData) {
+                const alerts = this.findAlerts(dayData);
+                const alertsList = document.getElementById('alertsList');
+                const alertBadge = document.getElementById('alertBadge');
+                const alertsTitle = document.getElementById('alertsTitle');
+                
+                const dayNames = ['🚨 Alerty - Dziś', '🚨 Alerty - Jutro', '🚨 Alerty - Pojutrze'];
+                alertsTitle.textContent = dayNames[this.currentDayOffset] || '🚨 Alerty';
+                
+                const totalAlerts = alerts.orange.length + alerts.red.length;
+                
+                if (totalAlerts > 0) {
+                    alertBadge.textContent = totalAlerts;
+                    alertBadge.style.display = 'inline-block';
+                    
+                    let html = '';
+                    
+                    alerts.red.forEach(alert => {
+                        const time = new Date(alert.time).toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' });
+                        html += `<div class="alert-item alert-red">
+                            <strong>🔴 ${time}</strong><br>
+                            Rezerwa: ${alert.reserve.toFixed(0)} MW | Wymagana: ${alert.required.toFixed(0)} MW<br>
+                            <small>Margines: ${alert.difference.toFixed(0)} MW</small>
+                        </div>`;
+                    });
+                    
+                    alerts.orange.forEach(alert => {
+                        const time = new Date(alert.time).toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' });
+                        html += `<div class="alert-item alert-orange">
+                            <strong>🟠 ${time}</strong><br>
+                            Rezerwa: ${alert.reserve.toFixed(0)} MW | Wymagana: ${alert.required.toFixed(0)} MW<br>
+                            <small>Margines: ${alert.difference.toFixed(0)} MW</small>
+                        </div>`;
+                    });
+                    
+                    alertsList.innerHTML = html;
+                } else {
+                    alertBadge.style.display = 'none';
+                    alertsList.innerHTML = '<div class="no-alerts">✅ Brak alertów w tym dniu</div>';
+                }
+            }
+            
+            updateQuickStats(dayData) {
+                if (!dayData || dayData.length === 0) return;
+                
+                const currentReserve = dayData[0].reserve;
+                const currentRequired = dayData[0].required;
+                const margin = currentReserve - currentRequired;
+                
+                // Update quick stats cards
+                document.getElementById('currentReserve').textContent = `${currentReserve.toFixed(0)} MW`;
+                document.getElementById('requiredReserve').textContent = `${currentRequired.toFixed(0)} MW`;
+                document.getElementById('safetyMargin').textContent = `${margin.toFixed(0)} MW`;
+                
+                // Update alert status
+                let status, statusClass, statusIcon, statusText;
+                if (margin <= this.ALERT_THRESHOLD_RED) {
+                    status = 'ALARM';
+                    statusClass = 'value-red';
+                    statusIcon = '🚨';
+                    statusText = 'Alert czerwony';
+                } else if (margin <= this.ALERT_THRESHOLD_ORANGE) {
+                    status = 'UWAGA';
+                    statusClass = 'value-orange';
+                    statusIcon = '⚠️';
+                    statusText = 'Alert pomarańczowy';
+                } else {
+                    status = 'OK';
+                    statusClass = 'value-green';
+                    statusIcon = '✅';
+                    statusText = 'Wszystko w normie';
+                }
+                
+                const alertStatusEl = document.getElementById('alertStatus');
+                const alertTrendEl = document.getElementById('alertTrend');
+                
+                alertStatusEl.textContent = status;
+                alertStatusEl.className = `card-value ${statusClass}`;
+                alertTrendEl.innerHTML = `<span>${statusIcon}</span> ${statusText}`;
+            }
+            
+            updateStatus(status, message) {
+                const indicator = document.getElementById('statusIndicator');
+                const text = document.getElementById('statusText');
+                
+                indicator.className = `status-indicator status-${status}`;
+                text.textContent = message;
+            }
+            
+            showNotification(message) {
+                const notification = document.getElementById('notification');
+                notification.textContent = message;
+                notification.classList.add('show');
+                
+                setTimeout(() => {
+                    notification.classList.remove('show');
+                }, 4000);
+            }
+            
+            async refreshData() {
+                const refreshBtn = document.getElementById('refreshBtn');
+                const lastUpdateEl = document.getElementById('lastUpdate');
+                
+                this.lastSeenTime = Date.now();
+                
+                if (refreshBtn) {
+                    refreshBtn.classList.add('loading');
+                }
+                this.updateStatus('offline', 'Pobieranie danych...');
+                
+                try {
+                    const data = await this.fetchData();
+                    const now = new Date().toLocaleString('pl-PL');
+                    
+                    if (data && data.length > 0) {
+                        console.log(`✅ SUKCES ŁADOWANIA DANYCH: ${data.length} punktów danych`);
+                        
+                        this.isOnline = true;
+                        this.allData = data;
+                        
+                        const dayData = this.getDataForDay(this.currentDayOffset);
+                        this.drawChart(dayData);
+                        
+                        const alerts = this.findAlerts(data);
+                        this.updateAlertHistory(alerts);
+                        this.updateAlerts(dayData);
+                        this.updateQuickStats(dayData);
+                        
+                        this.updateStatus('online', `Połączono | ${data.length} punktów`);
+                        if (lastUpdateEl) {
+                            lastUpdateEl.textContent = now.split(' ')[1].substring(0, 5);
+                        }
+                    } else {
+                        console.log('❌ Nie otrzymano danych');
+                        this.isOnline = false;
+                        this.updateStatus('offline', 'Brak danych');
+                        document.getElementById('mainChart').innerHTML = 
+                            '<div style="display: flex; align-items: center; justify-content: center; height: 200px; color: #ff3b30; text-align: center;">❌ Brak połączenia z API PSE<br><small>Sprawdź połączenie internetowe</small></div>';
+                        this.updateAlerts([]);
+                    }
+                } catch (error) {
+                    console.error('❌ Błąd odświeżania:', error);
+                    this.isOnline = false;
+                    this.updateStatus('offline', 'Błąd połączenia');
+                } finally {
+                    if (refreshBtn) {
+                        refreshBtn.classList.remove('loading');
+                    }
+                }
+            }
+        }
         
         // Tab switching
         function switchTab(tabName) {
@@ -805,753 +1496,75 @@
             
             currentTab = tabName;
             
-            // Refresh charts for current tab
-            setTimeout(() => {
-                refreshChartsForTab(tabName);
-            }, 100);
+            // Refresh charts for current tab (future enhancement)
+            console.log(`Switched to tab: ${tabName}`);
         }
         
-        // Data fetching
-        async function fetchPSEData(endpoint, params = '') {
-            try {
-                const url = `${endpoint}${params}`;
-                console.log(`📡 Fetching: ${url}`);
-                
-                const response = await fetch(url);
-                if (response.ok) {
-                    const data = await response.json();
-                    return data.value || [];
-                }
-                throw new Error(`HTTP ${response.status}`);
-            } catch (error) {
-                console.error(`❌ API Error:`, error);
-                return [];
+        // Global functions for onclick handlers
+        function switchDay(dayOffset) {
+            if (app) {
+                app.switchDay(dayOffset);
             }
         }
         
-        // Refresh all data
-        async function refreshAllData() {
-            if (isLoading) return;
-            
-            isLoading = true;
-            updateRefreshButton(true);
-            updateStatus('offline', 'Pobieranie danych...');
+        function refreshAllData() {
+            if (app) {
+                app.refreshData();
+            }
+        }
+        
+        function toggleSettings() {
+            if (app) {
+                app.toggleSettings();
+            }
+        }
+        
+        function saveSettings() {
+            if (app) {
+                app.saveSettings();
+            }
+        }
+        
+        function resetSettings() {
+            if (app) {
+                app.resetSettings();
+            }
+        }
+        
+        // Initialize app when DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('=== PSE OZE Dashboard Mobile Initializing ===');
+            console.log(`📱 Version: ${APP_VERSION} (build: ${APP_BUILD})`);
+            console.log('Location:', window.location.href);
             
             try {
-                // Fetch data from multiple endpoints
-                const [reserves, generation, prices, grid] = await Promise.all([
-                    fetchPSEData(API_ENDPOINTS.reserves, '?$first=100'),
-                    fetchPSEData(API_ENDPOINTS.generation, '?$first=50'),
-                    fetchPSEData(API_ENDPOINTS.prices, '?$first=50'),
-                    fetchPSEData(API_ENDPOINTS.grid, '?$first=50')
-                ]);
+                console.log('🚀 Tworzenie instancji PSEApp z core logic rezerw...');
+                app = new PSEApp();
+                console.log('✅ Instancja PSEApp utworzona pomyślnie');
                 
-                // Process and store data
-                appData.reserves = processReservesData(reserves);
-                appData.renewable = processRenewableData(generation);
-                appData.market = processPricesData(prices);
-                appData.grid = processGridData(grid);
-                
-                // Update UI
-                updateAllCharts();
-                updateQuickStats();
-                updateOZESummary();
-                
-                updateStatus('online', `Połączono | ${appData.reserves.length} punktów danych`);
-                lastUpdate = new Date();
-                updateLastUpdateTime();
-                
-                showNotification('✅ Dane zaktualizowane pomyślnie', 'success');
+                // Debug version in app
+                app.version = APP_VERSION;
+                app.build = APP_BUILD;
                 
             } catch (error) {
-                console.error('❌ Refresh error:', error);
-                updateStatus('offline', 'Błąd połączenia');
-                showNotification('❌ Błąd pobierania danych', 'error');
-            } finally {
-                isLoading = false;
-                updateRefreshButton(false);
-            }
-        }
-        
-        // Data processing functions
-        function processReservesData(data) {
-            if (!data || data.length === 0) return generateSampleReserves();
-            
-            return data.slice(0, 72).map((item, index) => ({
-                time: new Date(Date.now() + index * 60 * 60 * 1000),
-                reserve: parseFloat(item.surplus_cap_avail_tso || 0) + Math.random() * 500 + 800,
-                required: parseFloat(item.req_pow_res || 0) + Math.random() * 200 + 600
-            }));
-        }
-        
-        function processRenewableData(data) {
-            if (!data || data.length === 0) return generateSampleRenewable();
-            
-            return data.slice(0, 24).map((item, index) => ({
-                time: new Date(Date.now() - (24 - index) * 60 * 60 * 1000),
-                wind: Math.random() * 8000 + 2000,
-                solar: Math.max(0, Math.sin((index / 24) * Math.PI) * 12000),
-                hydro: Math.random() * 2000 + 1000,
-                bio: Math.random() * 1500 + 500,
-                total: 0
-            })).map(item => {
-                item.total = item.wind + item.solar + item.hydro + item.bio;
-                return item;
-            });
-        }
-        
-        function processPricesData(data) {
-            if (!data || data.length === 0) return generateSamplePrices();
-            
-            return data.slice(0, 168).map((item, index) => ({
-                time: new Date(Date.now() - (168 - index) * 60 * 60 * 1000),
-                price: Math.random() * 200 + 300,
-                volume: Math.random() * 10000 + 5000
-            }));
-        }
-        
-        function processGridData(data) {
-            if (!data || data.length === 0) return generateSampleGrid();
-            
-            return data.slice(0, 24).map((item, index) => ({
-                time: new Date(Date.now() - (24 - index) * 60 * 60 * 1000),
-                load: Math.random() * 10000 + 20000,
-                generation: Math.random() * 12000 + 22000,
-                utilization: Math.random() * 30 + 60
-            }));
-        }
-        
-        // Sample data generators
-        function generateSampleReserves() {
-            const data = [];
-            for (let i = 0; i < 72; i++) {
-                data.push({
-                    time: new Date(Date.now() + i * 60 * 60 * 1000),
-                    reserve: Math.random() * 1000 + 500 + Math.sin(i / 12) * 200,
-                    required: Math.random() * 200 + 400 + Math.sin(i / 8) * 100
-                });
-            }
-            return data;
-        }
-        
-        function generateSampleRenewable() {
-            const data = [];
-            for (let i = 0; i < 24; i++) {
-                const item = {
-                    time: new Date(Date.now() - (24 - i) * 60 * 60 * 1000),
-                    wind: Math.random() * 8000 + 2000,
-                    solar: Math.max(0, Math.sin((i / 24) * Math.PI) * 12000),
-                    hydro: Math.random() * 2000 + 1000,
-                    bio: Math.random() * 1500 + 500
-                };
-                item.total = item.wind + item.solar + item.hydro + item.bio;
-                data.push(item);
-            }
-            return data;
-        }
-        
-        function generateSamplePrices() {
-            const data = [];
-            for (let i = 0; i < 168; i++) {
-                data.push({
-                    time: new Date(Date.now() - (168 - i) * 60 * 60 * 1000),
-                    price: Math.random() * 200 + 300,
-                    volume: Math.random() * 10000 + 5000
-                });
-            }
-            return data;
-        }
-        
-        function generateSampleGrid() {
-            const data = [];
-            for (let i = 0; i < 24; i++) {
-                data.push({
-                    time: new Date(Date.now() - (24 - i) * 60 * 60 * 1000),
-                    load: Math.random() * 10000 + 20000,
-                    generation: Math.random() * 12000 + 22000,
-                    utilization: Math.random() * 30 + 60
-                });
-            }
-            return data;
-        }
-        
-        // Chart initialization and updates
-        function initializeCharts() {
-            // Initialize all chart containers
-            console.log('📊 Initializing charts...');
-        }
-        
-        function updateAllCharts() {
-            updateMainChart();
-            updateOZEMixChart();
-            updateOZETrendChart();
-            updateOZEVsConventionalChart();
-            updateGridLoadChart();
-            updatePriceChart();
-            updateForecastChart();
-            updateScenarioChart();
-        }
-        
-        function refreshChartsForTab(tabName) {
-            switch (tabName) {
-                case 'reserves':
-                    updateMainChart();
-                    break;
-                case 'renewable':
-                    updateOZEMixChart();
-                    updateOZETrendChart();
-                    updateOZEVsConventionalChart();
-                    break;
-                case 'grid':
-                    updateGridLoadChart();
-                    break;
-                case 'market':
-                    updatePriceChart();
-                    break;
-                case 'forecast':
-                    updateForecastChart();
-                    updateScenarioChart();
-                    break;
-            }
-        }
-        
-        function updateMainChart() {
-            const data = appData.reserves;
-            if (!data || data.length === 0) return;
-            
-            const times = data.map(d => d.time);
-            const reserves = data.map(d => d.reserve);
-            const required = data.map(d => d.required);
-            
-            const traces = [
-                {
-                    x: times,
-                    y: reserves,
-                    type: 'scatter',
-                    mode: 'lines',
-                    name: 'Rezerwa dostępna',
-                    line: { color: '#27ae60', width: 3 }
-                },
-                {
-                    x: times,
-                    y: required,
-                    type: 'scatter',
-                    mode: 'lines',
-                    name: 'Rezerwa wymagana',
-                    line: { color: '#e74c3c', width: 2 }
-                }
-            ];
-            
-            const layout = {
-                showlegend: true,
-                legend: { orientation: 'h', y: -0.1 },
-                margin: { t: 30, r: 30, b: 80, l: 60 },
-                xaxis: { 
-                    title: 'Czas',
-                    tickformat: '%H:%M',
-                    tickangle: 45
-                },
-                yaxis: { 
-                    title: 'Moc [MW]',
-                    showgrid: true,
-                    gridcolor: '#f0f0f0'
-                },
-                plot_bgcolor: 'white',
-                paper_bgcolor: 'white',
-                font: { size: 12 }
-            };
-            
-            Plotly.newPlot('mainChart', traces, layout, { responsive: true, displayModeBar: false });
-        }
-        
-        function updateOZEMixChart() {
-            const data = appData.renewable;
-            if (!data || data.length === 0) return;
-            
-            const latest = data[data.length - 1];
-            
-            const pieData = [{
-                values: [latest.wind, latest.solar, latest.hydro, latest.bio],
-                labels: ['Wiatrowa', 'Słoneczna', 'Wodna', 'Biomasa'],
-                type: 'pie',
-                hole: 0.4,
-                marker: {
-                    colors: ['#3498db', '#f39c12', '#2980b9', '#27ae60']
-                },
-                textinfo: 'label+percent',
-                textposition: 'outside'
-            }];
-            
-            const layout = {
-                showlegend: false,
-                margin: { t: 30, r: 30, b: 30, l: 30 },
-                annotations: [{
-                    text: `${(latest.total / 1000).toFixed(1)} GW<br><span style="font-size: 12px;">Łączna moc OZE</span>`,
-                    x: 0.5,
-                    y: 0.5,
-                    font: { size: 16, color: '#2c3e50' },
-                    showarrow: false
-                }],
-                font: { size: 11 }
-            };
-            
-            Plotly.newPlot('ozeMixChart', pieData, layout, { responsive: true, displayModeBar: false });
-        }
-        
-        function updateOZETrendChart() {
-            const data = appData.renewable;
-            if (!data || data.length === 0) return;
-            
-            const times = data.map(d => d.time);
-            
-            const traces = [
-                {
-                    x: times,
-                    y: data.map(d => d.wind),
-                    type: 'scatter',
-                    mode: 'lines',
-                    name: 'Wiatrowa',
-                    line: { color: '#3498db', width: 2 }
-                },
-                {
-                    x: times,
-                    y: data.map(d => d.solar),
-                    type: 'scatter',
-                    mode: 'lines',
-                    name: 'Słoneczna',
-                    line: { color: '#f39c12', width: 2 }
-                },
-                {
-                    x: times,
-                    y: data.map(d => d.total),
-                    type: 'scatter',
-                    mode: 'lines',
-                    name: 'Łączna OZE',
-                    line: { color: '#27ae60', width: 3 }
-                }
-            ];
-            
-            const layout = {
-                showlegend: true,
-                legend: { orientation: 'h', y: -0.15 },
-                margin: { t: 30, r: 30, b: 80, l: 60 },
-                xaxis: { 
-                    title: 'Czas',
-                    tickformat: '%H:%M',
-                    tickangle: 45
-                },
-                yaxis: { 
-                    title: 'Moc [MW]',
-                    showgrid: true,
-                    gridcolor: '#f0f0f0'
-                },
-                plot_bgcolor: 'white',
-                paper_bgcolor: 'white',
-                font: { size: 11 }
-            };
-            
-            Plotly.newPlot('ozeTrendChart', traces, layout, { responsive: true, displayModeBar: false });
-        }
-        
-        function updateOZEVsConventionalChart() {
-            const data = appData.renewable;
-            if (!data || data.length === 0) return;
-            
-            const times = data.map(d => d.time);
-            const ozeTotal = data.map(d => d.total);
-            const conventional = data.map(d => Math.random() * 15000 + 10000); // Simulated conventional
-            
-            const traces = [
-                {
-                    x: times,
-                    y: ozeTotal,
-                    type: 'scatter',
-                    mode: 'lines',
-                    name: 'Energia odnawialna',
-                    line: { color: '#27ae60', width: 3 },
-                    fill: 'tonexty'
-                },
-                {
-                    x: times,
-                    y: conventional,
-                    type: 'scatter',
-                    mode: 'lines',
-                    name: 'Źródła konwencjonalne',
-                    line: { color: '#95a5a6', width: 2 }
-                }
-            ];
-            
-            const layout = {
-                showlegend: true,
-                legend: { orientation: 'h', y: -0.15 },
-                margin: { t: 30, r: 30, b: 80, l: 60 },
-                xaxis: { 
-                    title: 'Czas',
-                    tickformat: '%H:%M',
-                    tickangle: 45
-                },
-                yaxis: { 
-                    title: 'Moc [MW]',
-                    showgrid: true,
-                    gridcolor: '#f0f0f0'
-                },
-                plot_bgcolor: 'white',
-                paper_bgcolor: 'white',
-                font: { size: 11 }
-            };
-            
-            Plotly.newPlot('ozeVsConventionalChart', traces, layout, { responsive: true, displayModeBar: false });
-        }
-        
-        function updateGridLoadChart() {
-            const data = appData.grid;
-            if (!data || data.length === 0) return;
-            
-            const times = data.map(d => d.time);
-            
-            const traces = [
-                {
-                    x: times,
-                    y: data.map(d => d.load / 1000),
-                    type: 'scatter',
-                    mode: 'lines',
-                    name: 'Zapotrzebowanie',
-                    line: { color: '#e74c3c', width: 3 }
-                },
-                {
-                    x: times,
-                    y: data.map(d => d.generation / 1000),
-                    type: 'scatter',
-                    mode: 'lines',
-                    name: 'Generacja',
-                    line: { color: '#27ae60', width: 2 }
-                }
-            ];
-            
-            const layout = {
-                showlegend: true,
-                legend: { orientation: 'h', y: -0.1 },
-                margin: { t: 30, r: 30, b: 80, l: 60 },
-                xaxis: { 
-                    title: 'Czas',
-                    tickformat: '%H:%M',
-                    tickangle: 45
-                },
-                yaxis: { 
-                    title: 'Moc [GW]',
-                    showgrid: true,
-                    gridcolor: '#f0f0f0'
-                },
-                plot_bgcolor: 'white',
-                paper_bgcolor: 'white',
-                font: { size: 12 }
-            };
-            
-            Plotly.newPlot('gridLoadChart', traces, layout, { responsive: true, displayModeBar: false });
-        }
-        
-        function updatePriceChart() {
-            const data = appData.market;
-            if (!data || data.length === 0) return;
-            
-            const times = data.map(d => d.time);
-            const prices = data.map(d => d.price);
-            
-            const traces = [
-                {
-                    x: times,
-                    y: prices,
-                    type: 'scatter',
-                    mode: 'lines',
-                    name: 'Cena spot',
-                    line: { color: '#9b59b6', width: 2 }
-                }
-            ];
-            
-            const layout = {
-                showlegend: false,
-                margin: { t: 30, r: 30, b: 80, l: 60 },
-                xaxis: { 
-                    title: 'Czas',
-                    tickformat: '%d.%m %H:%M',
-                    tickangle: 45
-                },
-                yaxis: { 
-                    title: 'Cena [PLN/MWh]',
-                    showgrid: true,
-                    gridcolor: '#f0f0f0'
-                },
-                plot_bgcolor: 'white',
-                paper_bgcolor: 'white',
-                font: { size: 12 }
-            };
-            
-            Plotly.newPlot('priceChart', traces, layout, { responsive: true, displayModeBar: false });
-        }
-        
-        function updateForecastChart() {
-            // Generate 7-day forecast
-            const forecast = [];
-            for (let i = 0; i < 168; i++) { // 7 days * 24 hours
-                forecast.push({
-                    time: new Date(Date.now() + i * 60 * 60 * 1000),
-                    wind: Math.random() * 8000 + 2000 + Math.sin(i / 24) * 1000,
-                    solar: Math.max(0, Math.sin((i % 24) / 24 * Math.PI) * 12000),
-                    total: 0
-                });
-            }
-            
-            forecast.forEach(item => {
-                item.total = item.wind + item.solar;
-            });
-            
-            const times = forecast.map(d => d.time);
-            
-            const traces = [
-                {
-                    x: times,
-                    y: forecast.map(d => d.wind),
-                    type: 'scatter',
-                    mode: 'lines',
-                    name: 'Prognoza wiatrowa',
-                    line: { color: '#3498db', width: 2 }
-                },
-                {
-                    x: times,
-                    y: forecast.map(d => d.solar),
-                    type: 'scatter',
-                    mode: 'lines',
-                    name: 'Prognoza słoneczna',
-                    line: { color: '#f39c12', width: 2 }
-                },
-                {
-                    x: times,
-                    y: forecast.map(d => d.total),
-                    type: 'scatter',
-                    mode: 'lines',
-                    name: 'Łączna prognoza OZE',
-                    line: { color: '#27ae60', width: 3 }
-                }
-            ];
-            
-            const layout = {
-                showlegend: true,
-                legend: { orientation: 'h', y: -0.1 },
-                margin: { t: 30, r: 30, b: 80, l: 60 },
-                xaxis: { 
-                    title: 'Czas',
-                    tickformat: '%d.%m',
-                    tickangle: 45
-                },
-                yaxis: { 
-                    title: 'Moc [MW]',
-                    showgrid: true,
-                    gridcolor: '#f0f0f0'
-                },
-                plot_bgcolor: 'white',
-                paper_bgcolor: 'white',
-                font: { size: 12 }
-            };
-            
-            Plotly.newPlot('forecastChart', traces, layout, { responsive: true, displayModeBar: false });
-        }
-        
-        function updateScenarioChart() {
-            // Poland's energy transformation scenarios
-            const years = ['2024', '2026', '2028', '2030'];
-            const scenarios = [
-                {
-                    name: 'Scenariusz konserwatywny',
-                    values: [25, 35, 45, 50],
-                    color: '#95a5a6'
-                },
-                {
-                    name: 'Scenariusz bazowy (cel)',
-                    values: [25, 38, 48, 56],
-                    color: '#27ae60'
-                },
-                {
-                    name: 'Scenariusz ambitny',
-                    values: [25, 42, 52, 62],
-                    color: '#2980b9'
-                }
-            ];
-            
-            const traces = scenarios.map(scenario => ({
-                x: years,
-                y: scenario.values,
-                type: 'scatter',
-                mode: 'lines+markers',
-                name: scenario.name,
-                line: { color: scenario.color, width: 3 },
-                marker: { size: 8 }
-            }));
-            
-            const layout = {
-                showlegend: true,
-                legend: { orientation: 'h', y: -0.15 },
-                margin: { t: 30, r: 30, b: 80, l: 60 },
-                xaxis: { 
-                    title: 'Rok'
-                },
-                yaxis: { 
-                    title: 'Udział OZE [%]',
-                    showgrid: true,
-                    gridcolor: '#f0f0f0',
-                    range: [20, 70]
-                },
-                plot_bgcolor: 'white',
-                paper_bgcolor: 'white',
-                font: { size: 11 }
-            };
-            
-            Plotly.newPlot('scenarioChart', traces, layout, { responsive: true, displayModeBar: false });
-        }
-        
-        // Update UI components
-        function updateQuickStats() {
-            const reserves = appData.reserves;
-            const renewable = appData.renewable;
-            const market = appData.market;
-            const grid = appData.grid;
-            
-            if (reserves && reserves.length > 0) {
-                document.getElementById('currentReserve').textContent = `${reserves[0].reserve.toFixed(0)} MW`;
-            }
-            
-            if (renewable && renewable.length > 0) {
-                const latest = renewable[renewable.length - 1];
-                document.getElementById('windPower').textContent = `${(latest.wind).toFixed(0)} MW`;
-                document.getElementById('solarPower').textContent = `${(latest.solar).toFixed(0)} MW`;
-            }
-            
-            if (market && market.length > 0) {
-                const latest = market[market.length - 1];
-                document.getElementById('spotPrice').textContent = `${latest.price.toFixed(0)} PLN`;
-            }
-            
-            if (grid && grid.length > 0) {
-                const latest = grid[grid.length - 1];
-                document.getElementById('currentLoad').textContent = `${(latest.load / 1000).toFixed(1)} GW`;
-                document.getElementById('maxLoad').textContent = `${Math.max(...grid.map(d => d.load / 1000)).toFixed(1)} GW`;
-                document.getElementById('gridUtilization').textContent = `${latest.utilization.toFixed(0)}%`;
-            }
-            
-            // Market prices
-            if (market && market.length > 0) {
-                const latest = market[market.length - 1];
-                document.getElementById('tgeSpot').textContent = `${latest.price.toFixed(0)} PLN/MWh`;
-                document.getElementById('futuresQ2').textContent = `${(latest.price * 1.1).toFixed(0)} PLN/MWh`;
-                document.getElementById('ozeCertificates').textContent = `${(Math.random() * 50 + 20).toFixed(0)} PLN/MWh`;
-                document.getElementById('co2Price').textContent = `${(Math.random() * 20 + 80).toFixed(0)} EUR/t`;
+                console.error('❌ Nie udało się utworzyć PSEApp:', error);
                 
-                document.getElementById('avgPriceToday').textContent = `${latest.price.toFixed(0)} PLN`;
-                document.getElementById('peakHour').textContent = '14:00';
-                document.getElementById('peakPrice').textContent = `${(latest.price * 1.5).toFixed(0)} PLN/MWh`;
+                const chart = document.getElementById('mainChart');
+                if (chart) {
+                    chart.innerHTML = `
+                        <div style="padding: 20px; text-align: center; color: #e74c3c;">
+                            <h3>❌ Błąd inicjalizacji aplikacji</h3>
+                            <p>Szczegóły: ${error.message}</p>
+                            <button onclick="window.location.reload()" style="padding: 10px 20px; background: #e74c3c; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                                🔄 Odśwież stronę
+                            </button>
+                        </div>
+                    `;
+                }
             }
-            
-            // Forecast values
-            document.getElementById('windForecast').textContent = `${(Math.random() * 8000 + 2000).toFixed(0)} MW`;
-            document.getElementById('solarForecast').textContent = `${(Math.random() * 10000 + 5000).toFixed(0)} MW`;
-        }
+        });
         
-        function updateOZESummary() {
-            const renewable = appData.renewable;
-            if (!renewable || renewable.length === 0) return;
-            
-            const latest = renewable[renewable.length - 1];
-            const totalGeneration = 30000; // Simulated total generation in MW
-            const ozePercentage = (latest.total / totalGeneration * 100);
-            
-            document.getElementById('ozePercentage').textContent = `${ozePercentage.toFixed(1)}%`;
-            document.getElementById('currentOzePercent').textContent = `${ozePercentage.toFixed(1)}%`;
-            document.getElementById('ozeProgressBar').style.width = `${Math.min(ozePercentage, 100)}%`;
-            document.getElementById('ozeRemaining').textContent = `${Math.max(0, 56 - ozePercentage).toFixed(1)} p.p.`;
-        }
-        
-        function updateStatus(status, message) {
-            const indicator = document.getElementById('statusIndicator');
-            const text = document.getElementById('statusText');
-            
-            indicator.className = `status-indicator status-${status}`;
-            text.textContent = message;
-        }
-        
-        function updateRefreshButton(loading) {
-            const btn = document.getElementById('refreshBtn');
-            if (loading) {
-                btn.classList.add('loading');
-                btn.innerHTML = '⏳';
-            } else {
-                btn.classList.remove('loading');
-                btn.innerHTML = '🔄';
-            }
-        }
-        
-        function updateLastUpdateTime() {
-            if (lastUpdate) {
-                const timeStr = lastUpdate.toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' });
-                document.getElementById('lastUpdate').textContent = `Ostatnia aktualizacja: ${timeStr}`;
-            }
-        }
-        
-        function showNotification(message, type = 'info') {
-            const notification = document.getElementById('notification');
-            notification.textContent = message;
-            notification.className = `notification show ${type}`;
-            
-            setTimeout(() => {
-                notification.classList.remove('show');
-            }, 3000);
-        }
-        
-        // Simulate some data for demo
-        function simulateInitialData() {
-            // Weather simulation
-            document.getElementById('weatherTemp').textContent = `${Math.floor(Math.random() * 20 + 10)}°C`;
-            document.getElementById('windSpeed').textContent = `${Math.floor(Math.random() * 20 + 5)} km/h`;
-            document.getElementById('cloudCover').textContent = `${Math.floor(Math.random() * 50 + 25)}%`;
-            
-            // Generate initial sample data
-            appData.reserves = generateSampleReserves();
-            appData.renewable = generateSampleRenewable();
-            appData.market = generateSamplePrices();
-            appData.grid = generateSampleGrid();
-            
-            updateAllCharts();
-            updateQuickStats();
-            updateOZESummary();
-            
-            updateStatus('online', 'Tryb demonstracyjny');
-        }
-        
-        // Auto-update weather icons based on time
-        function updateWeatherIcon() {
-            const hour = new Date().getHours();
-            const icons = {
-                night: '🌙',
-                morning: '🌅',
-                day: '☀️',
-                evening: '🌇',
-                cloudy: '☁️',
-                partlyCloudy: '⛅'
-            };
-            
-            let icon = icons.day;
-            if (hour < 6 || hour > 22) icon = icons.night;
-            else if (hour < 9) icon = icons.morning;
-            else if (hour > 18) icon = icons.evening;
-            else if (Math.random() > 0.7) icon = icons.cloudy;
-            else if (Math.random() > 0.5) icon = icons.partlyCloudy;
-            
-            document.getElementById('weatherIcon').textContent = icon;
-        }
-        
-        // Initialize weather updates
-        setInterval(updateWeatherIcon, 60000);
-        updateWeatherIcon();
-        
-        console.log('🌱 PSE OZE Dashboard initialized successfully!');
+        console.log('🌱 PSE OZE Dashboard with integrated reserves logic loaded!');
     </script>
 </body>
 </html>
