@@ -886,10 +886,11 @@
                 
                 // PSE API ENDPOINTS - REAL DATA - ALL WORKING
                 this.API_ENDPOINTS = {
-                    reserves: 'https://api.raporty.pse.pl/api/pk5l-wp',      // ✅ REAL - rezerwy mocy 
-                    generation: 'https://api.raporty.pse.pl/api/gen-jw',     // ✅ REAL - generacja jednostek wytwórczych
-                    load: 'https://api.raporty.pse.pl/api/kse-load',         // ✅ REAL - obciążenie KSE - TERAZ DZIAŁAJĄCE!
-                    prices: 'https://api.raporty.pse.pl/api/energy-prices'   // ✅ REAL - ceny energii - TERAZ DZIAŁAJĄCE!
+                reserves: 'https://api.raporty.pse.pl/api/pk5l-wp',
+               generation: 'https://api.raporty.pse.pl/api/gen-jw',
+                load: 'https://api.raporty.pse.pl/api/kse-load',
+                prices: 'https://api.raporty.pse.pl/api/energy-prices',
+                oze: 'https://api.raporty.pse.pl/api/poze-redoze'  // ✅ DODAJ prawdziwe OZE  
                 };
                 
                 // WEATHER API - CONFIGURABLE KEY
@@ -2376,10 +2377,18 @@
                     
                     // Fetch all other data in parallel
                     const weatherPromise = this.fetchWeatherData();
-                    const generationPromise = this.fetchPSEData(this.API_ENDPOINTS.generation, '?$first=200').catch(err => {
-                        console.log('⚠️ Generation API failed:', err.message);
-                        updateDebugPanel('Generation API niedostępne', 'error');
-                        return [];
+                 const generationPromise = this.fetchPSEData(this.API_ENDPOINTS.generation, '?$first=200').catch(err => {
+    console.log('⚠️ Generation API failed:', err.message);
+    updateDebugPanel('Generation API niedostępne', 'error');
+    return [];
+});
+
+// ✅ DODAJ pobieranie prawdziwych danych OZE
+const ozePromise = this.fetchPSEData(this.API_ENDPOINTS.oze, '?$first=200').catch(err => {
+    console.log('⚠️ OZE API failed:', err.message);
+    updateDebugPanel('OZE API niedostępne', 'error');
+    return [];
+});
                     });
                     
                     const now = new Date().toLocaleString('pl-PL');
