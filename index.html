@@ -1,4 +1,42 @@
-loadPlaceholderCharts() {
+function forceCreateAllCharts() {
+            console.log('🔧 FORCING chart creation manually...');
+            updateDebugPanel('Wymuszam utworzenie wszystkich wykresów...', 'info');
+            
+            if (app) {
+                try {
+                    // Force create all charts
+                    console.log('🔧 Calling loadPlaceholderCharts()...');
+                    app.loadPlaceholderCharts();
+                    
+                    // Also try specific charts for each tab
+                    console.log('🔧 Creating specific charts...');
+                    
+                    setTimeout(() => {
+                        app.createOZEMixChart();
+                    }, 500);
+                    
+                    setTimeout(() => {
+                        app.createPlaceholderChart('gridLoadChart', '🔌 Obciążenie KSE', 'Funkcja w rozwoju - API kse-load');
+                    }, 1000);
+                    
+                    setTimeout(() => {
+                        app.createPlaceholderChart('priceChart', '💰 Ceny energii TGE', 'Funkcja w rozwoju - API energy-prices');
+                    }, 1500);
+                    
+                    setTimeout(() => {
+                        app.createPlaceholderChart('forecastChart', '🔮 Prognoza OZE na 7 dni', 'Funkcja w rozwoju - wymaga dodatkowych API PSE');
+                    }, 2000);
+                    
+                    updateDebugPanel('Wszystkie wykresy wymuszone - sprawdź zakładki za 3 sekundy!', 'success');
+                    
+                } catch (error) {
+                    console.error('❌ Error forcing charts:', error);
+                    updateDebugPanel(`Błąd wymuszania wykresów: ${error.message}`, 'error');
+                }
+            } else {
+                updateDebugPanel('Brak instancji app - poczekaj na inicjalizację', 'error');
+            }
+        }            loadPlaceholderCharts() {
                 console.log('📊 Loading placeholder charts for all tabs...');
                 updateDebugPanel('Ładowanie wykresów dla wszystkich zakładek...', 'info');
                 
