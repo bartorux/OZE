@@ -2234,97 +2234,93 @@ const data = [{
                 console.log('✅ RESERVES DATA: Quick stats zaktualizowane z rzeczywistymi danymi PSE');
                 updateDebugPanel(`Stats: ${currentReserve.toFixed(0)}MW/${currentRequired.toFixed(0)}MW, status: ${status}`, 'success');
             }
-            
-            updateOZEData(generationData) {
-                try {
-                    if (!generationData || generationData.length === 0) {
-                        console.log('⚠️ Brak danych generacji OZE');
-                        updateDebugPanel('Brak danych generacji OZE', 'error');
-                        this.setOZEPlaceholders('Brak danych PSE API');
-                        return;
-                    }
-                    
-                    console.log(`🌱 REAL DATA: Aktualizuję dane OZE z ${generationData.length} rekordów PSE`);
-                    updateDebugPanel(`Przetwarzanie ${generationData.length} rekordów generacji...`, 'info');
-                    
-                    if (generationData.length > 0) {
-                        console.log('📊 Przykład struktury danych generacji:', generationData[0]);
-                        const fields = Object.keys(generationData[0]);
-                        console.log('📊 Dostępne pola generacji:', fields);
-                    }
-                    
-                    let windPower = 0;
-                    let solarPower = 0;
-                    let totalOZE = 0;
-                    let foundData = false;
-                    
-                    const possibleFuelFields = ['fuel_type', 'type', 'source', 'technology', 'resource_type'];
-                    const possibleGenerationFields = ['generation', 'power', 'output', 'production', 'current_generation'];
-                    
-                    generationData.forEach((item, index) => {
-                        try {
-                            let fuelType = null;
-                            let generation = 0;
-                            
-                            for (const field of possibleFuelFields) {
-                                if (item[field]) {
-                                    fuelType = item[field].toString().toUpperCase();
-                                    break;
-                                }
-                            }
-                            
-                            for (const field of possibleGenerationFields) {
-                                const value = item[field];
-                                if (value !== null && value !== undefined && !isNaN(parseFloat(value))) {
-                                    generation = parseFloat(value);
-                                    break;
-                                }
-                            }
-                            
-                            if (fuelType && generation > 0) {
-                                foundData = true;
-                                if (fuelType.includes('WIATR') || fuelType.includes('WIND')) {
-                                    windPower += generation;
-                                    console.log(`🌪️ Found wind power: ${generation} MW (total: ${windPower})`);
-                                }
-                                if (fuelType.includes('PV') || fuelType.includes('SOLAR') || fuelType.includes('SŁONECZ')) {
-                                    solarPower += generation;
-                                    console.log(`☀️ Found solar power: ${generation} MW (total: ${solarPower})`);
-                                }
-                            }
-                        } catch (itemError) {
-                            console.warn(`⚠️ Błąd przetwarzania rekordu generacji ${index}:`, itemError);
-                        }
-                    });
-                    
-                    if (!foundData || (windPower === 0 && solarPower === 0)) {
-    console.log('⚠️ Brak danych OZE z PSE API - nie używam estymacji');
-    updateDebugPanel('Brak danych OZE z PSE API', 'error');
-    
-    // ✅ BRAK DANYCH = BRAK WYŚWIETLANIA, nie losowe!
-    windPower = 0;
-    solarPower = 0;
-    
-    this.setOZEPlaceholders('Brak danych OZE w PSE API');
-    return; // ✅ Kończymy tutaj - nie pokazujemy losowych danych
-                        }
-                    } else {
-                        updateDebugPanel(`Dane OZE: Wiatr=${windPower.toFixed(0)}MW, Solar=${solarPower.toFixed(0)}MW`, 'success');
-                    }
-                    
-                    totalOZE = windPower + solarPower;
-                    const totalGeneration = 25000;
-                    const ozePercentage = Math.min((totalOZE / totalGeneration) * 100, 100);
-                    
-                    this.setOZEValues(windPower, solarPower, ozePercentage, foundData ? 'PSE API' : 'Estymacja');
-                    
-                    console.log(`✅ REAL DATA: OZE data updated - Wind: ${windPower.toFixed(0)}MW, Solar: ${solarPower.toFixed(0)}MW, Total: ${ozePercentage.toFixed(1)}%`);
-                  } catch (error) {
-            console.error('❌ Błąd aktualizacji danych OZE:', error);
-            updateDebugPanel(`Błąd OZE: ${error.message}`, 'error');
-            this.setOZEPlaceholders('Błąd przetwarzania');
+    updateOZEData(generationData) {
+    try {
+        if (!generationData || generationData.length === 0) {
+            console.log('⚠️ Brak danych generacji OZE');
+            updateDebugPanel('Brak danych generacji OZE', 'error');
+            this.setOZEPlaceholders('Brak danych PSE API');
+            return;
         }
+        
+        console.log(`🌱 REAL DATA: Aktualizuję dane OZE z ${generationData.length} rekordów PSE`);
+        updateDebugPanel(`Przetwarzanie ${generationData.length} rekordów generacji...`, 'info');
+        
+        if (generationData.length > 0) {
+            console.log('📊 Przykład struktury danych generacji:', generationData[0]);
+            const fields = Object.keys(generationData[0]);
+            console.log('📊 Dostępne pola generacji:', fields);
+        }
+        
+        let windPower = 0;
+        let solarPower = 0;
+        let totalOZE = 0;
+        let foundData = false;
+        
+        const possibleFuelFields = ['fuel_type', 'type', 'source', 'technology', 'resource_type'];
+        const possibleGenerationFields = ['generation', 'power', 'output', 'production', 'current_generation'];
+        
+        generationData.forEach((item, index) => {
+            try {
+                let fuelType = null;
+                let generation = 0;
+                
+                for (const field of possibleFuelFields) {
+                    if (item[field]) {
+                        fuelType = item[field].toString().toUpperCase();
+                        break;
+                    }
+                }
+                
+                for (const field of possibleGenerationFields) {
+                    const value = item[field];
+                    if (value !== null && value !== undefined && !isNaN(parseFloat(value))) {
+                        generation = parseFloat(value);
+                        break;
+                    }
+                }
+                
+                if (fuelType && generation > 0) {
+                    foundData = true;
+                    if (fuelType.includes('WIATR') || fuelType.includes('WIND')) {
+                        windPower += generation;
+                        console.log(`🌪️ Found wind power: ${generation} MW (total: ${windPower})`);
+                    }
+                    if (fuelType.includes('PV') || fuelType.includes('SOLAR') || fuelType.includes('SŁONECZ')) {
+                        solarPower += generation;
+                        console.log(`☀️ Found solar power: ${generation} MW (total: ${solarPower})`);
+                    }
+                }
+            } catch (itemError) {
+                console.warn(`⚠️ Błąd przetwarzania rekordu generacji ${index}:`, itemError);
+            }
+        });
+        
+        // ✅ JEŚLI BRAK PRAWDZIWYCH DANYCH - KOŃCZYMY, NIE UŻYWAMY LOSOWYCH!
+        if (!foundData || (windPower === 0 && solarPower === 0)) {
+            console.log('⚠️ Brak danych OZE z PSE API - nie używam estymacji');
+            updateDebugPanel('Brak danych OZE z PSE API', 'error');
+            this.setOZEPlaceholders('Brak danych OZE w PSE API');
+            return; // ✅ KOŃCZYMY TUTAJ - żadnych losowych danych!
+        }
+        
+        // ✅ MAMY PRAWDZIWE DANE - UŻYWAMY ICH
+        totalOZE = windPower + solarPower;
+        const totalGeneration = 25000;
+        const ozePercentage = Math.min((totalOZE / totalGeneration) * 100, 100);
+        
+        this.setOZEValues(windPower, solarPower, ozePercentage, 'PRAWDZIWE PSE API');
+        updateDebugPanel(`OZE REAL: Wiatr=${windPower.toFixed(0)}MW, Solar=${solarPower.toFixed(0)}MW`, 'success');
+        
+        console.log(`✅ REAL DATA: OZE data updated - Wind: ${windPower.toFixed(0)}MW, Solar: ${solarPower.toFixed(0)}MW, Total: ${ozePercentage.toFixed(1)}%`);
+        
+    } catch (error) {
+        console.error('❌ Błąd aktualizacji danych OZE:', error);
+        updateDebugPanel(`Błąd OZE: ${error.message}`, 'error');
+        this.setOZEPlaceholders('Błąd przetwarzania');
     }
+}        
+ 
         
         // ✅ WSTAW TUTAJ NOWĄ FUNKCJĘ:
 updateRealOZEData(ozeData) {
