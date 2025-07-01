@@ -2741,6 +2741,59 @@ if (ozeData && ozeData.length > 0) {
         });
         
         console.log('🌱 PSE OZE Dashboard with COMPLETE REAL API integration loaded!');
+// Tab switching
+function switchTab(tabName) {
+    if (!app) {
+        console.log('App not ready yet');
+        return;
+    }
+    
+    // Update tab buttons
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    const activeBtn = document.querySelector(`button[onclick*="'${tabName}'"]`);
+    if (activeBtn) activeBtn.classList.add('active');
+    
+    // Update tab content
+    document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+    const activeContent = document.getElementById(tabName);
+    if (activeContent) activeContent.classList.add('active');
+    
+    currentTab = tabName;
+    
+    console.log(`📱 Switched to tab: ${tabName}`);
+    updateDebugPanel(`Przełączono na zakładkę: ${tabName}`, 'info');
+}
+
+// Global functions for onclick handlers
+function switchDay(dayOffset) {
+    if (app) {
+        app.switchDay(dayOffset);
+    }
+}
+
+function refreshAllData() {
+    if (app) {
+        app.refreshData();
+    }
+}
+
+function toggleSettings() {
+    if (app) {
+        app.toggleSettings();
+    }
+}
+
+function saveSettings() {
+    if (app) {
+        app.saveSettings();
+    }
+}
+
+function resetSettings() {
+    if (app) {
+        app.resetSettings();
+    }
+}
     </script>
 </body>
 </html>
