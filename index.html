@@ -2267,18 +2267,15 @@
                     });
                     
                     if (!foundData || (windPower === 0 && solarPower === 0)) {
-                        console.log('⚠️ Brak szczegółowych danych OZE w gen-jw, używam estymacji');
-                        updateDebugPanel('Brak rzeczywistych danych OZE - używam estymacji', 'error');
-                        
-                        windPower = Math.random() * 4000 + 2000;
-                        solarPower = Math.random() * 8000 + 1000;
-                        
-                        const hour = new Date().getHours();
-                        if (hour < 6 || hour > 20) {
-                            solarPower = Math.random() * 100;
-                        } else {
-                            const solarFactor = Math.sin(((hour - 6) / 14) * Math.PI);
-                            solarPower *= solarFactor;
+    console.log('⚠️ Brak danych OZE z PSE API - nie używam estymacji');
+    updateDebugPanel('Brak danych OZE z PSE API', 'error');
+    
+    // ✅ BRAK DANYCH = BRAK WYŚWIETLANIA, nie losowe!
+    windPower = 0;
+    solarPower = 0;
+    
+    this.setOZEPlaceholders('Brak danych OZE w PSE API');
+    return; // ✅ Kończymy tutaj - nie pokazujemy losowych danych
                         }
                     } else {
                         updateDebugPanel(`Dane OZE: Wiatr=${windPower.toFixed(0)}MW, Solar=${solarPower.toFixed(0)}MW`, 'success');
