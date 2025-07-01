@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="description" content="PSE Dashboard - Monitoring rezerw mocy i energii odnawialnej w KSE">
-    <title>PSE Dashboard - OZE</title>
+    <title>PSE Dashboard - OZE (Fixed)</title>
     
     <!-- PWA Meta Tags -->
     <link rel="manifest" href="./manifest.json">
@@ -83,6 +83,25 @@
             margin: 0 auto;
             padding: 0;
             position: relative;
+        }
+
+        .debug-panel {
+            background: #2c3e50;
+            color: white;
+            padding: 12px 16px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            border-bottom: 2px solid var(--primary-green);
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+
+        .debug-panel.error {
+            background: #e74c3c;
+        }
+
+        .debug-panel.success {
+            background: #27ae60;
         }
 
         .tab-navigation {
@@ -588,12 +607,15 @@
     </style>
 </head>
 <body>
+    <!-- Debug Panel -->
+    <div class="debug-panel" id="debugPanel">🔧 Debug: Initializing...</div>
+
     <!-- Notification -->
     <div class="notification" id="notification"></div>
 
     <!-- Header -->
     <div class="header">
-        <h1>🌱 PSE Dashboard - Energia Odnawialna</h1>
+        <h1>🌱 PSE Dashboard - Energia Odnawialna (FIXED)</h1>
         <p>Monitoring rezerw mocy i transformacji energetycznej Polski</p>
     </div>
 
@@ -624,6 +646,11 @@
             <div class="setting-item">
                 <label>Próg alertu czerwonego (MW):</label>
                 <input type="number" id="redThreshold" value="300" min="50" max="500" step="50">
+            </div>
+            <div class="setting-item">
+                <label>Weather API Key (opcjonalny):</label>
+                <input type="text" id="weatherApiKey" placeholder="Wpisz swój klucz OpenWeatherMap">
+                <small style="color: #666; font-size: 12px;">Pobierz darmowy klucz z https://openweathermap.org/api</small>
             </div>
             <div class="setting-actions">
                 <button onclick="saveSettings()" class="save-btn">Zapisz</button>
@@ -823,10 +850,10 @@
 
     <script>
         // Application version
-        const APP_VERSION = '4.1.0';
+        const APP_VERSION = '4.2.0-FIXED';
         const APP_BUILD = Date.now();
         
-        console.log(`🌱 PSE OZE Dashboard ${APP_VERSION} (build: ${APP_BUILD}) - REAL DATA VERSION`);
+        console.log(`🌱 PSE OZE Dashboard ${APP_VERSION} (build: ${APP_BUILD}) - FIXED VERSION`);
         
         // Global state
         let currentTab = 'reserves';
@@ -836,16 +863,28 @@
         // CORE RESERVES LOGIC - PORTED FROM PWA - REAL DATA
         let app = null;
         
-        // PSE Dashboard Application Class - INTEGRATED WITH OZE - REAL DATA
+        // Debug helper function
+        function updateDebugPanel(message, type = 'info') {
+            const panel = document.getElementById('debugPanel');
+            if (panel) {
+                const timestamp = new Date().toLocaleTimeString('pl-PL');
+                panel.textContent = `🔧 ${timestamp}: ${message}`;
+                panel.className = `debug-panel ${type}`;
+                console.log(`[${timestamp}] ${message}`);
+            }
+        }
+        
+        // PSE Dashboard Application Class - INTEGRATED WITH OZE - REAL DATA - FIXED
         class PSEApp {
             constructor() {
-                console.log('🚀 PSE OZE Dashboard - Inicjalizacja z REAL DATA z API PSE...');
+                console.log('🚀 PSE OZE Dashboard - Inicjalizacja FIXED VERSION z REAL DATA z API PSE...');
+                updateDebugPanel('Inicjalizacja PSE Dashboard (FIXED)...', 'info');
                 
                 // Configuration - CORE FROM PWA
                 this.ALERT_THRESHOLD_ORANGE = 500;
                 this.ALERT_THRESHOLD_RED = 300;
                 
-                // PSE API ENDPOINTS - REAL DATA
+                // PSE API ENDPOINTS - REAL DATA WITH FALLBACKS
                 this.API_ENDPOINTS = {
                     reserves: 'https://api.raporty.pse.pl/api/pk5l-wp',      // ✅ REAL - rezerwy mocy 
                     generation: 'https://api.raporty.pse.pl/api/gen-jw',     // ✅ REAL - generacja jednostek wytwórczych
@@ -853,9 +892,9 @@
                     prices: 'https://api.raporty.pse.pl/api/energy-prices'   // ✅ REAL - ceny energii
                 };
                 
-                // WEATHER API - REAL DATA FOR GDANSK
+                // WEATHER API - CONFIGURABLE KEY
                 this.WEATHER_API = {
-                    key: '9b3eb3a67fe30e6bf1c1b8cf6fb25e23', // Demo key - replace with your own!
+                    key: null, // Will be loaded from settings
                     baseUrl: 'https://api.openweathermap.org/data/2.5/weather',
                     gdanskCoords: { lat: 54.3520, lon: 18.6466 }
                 };
@@ -876,19 +915,26 @@
                 this.generationData = null;
                 this.gridData = null;
                 
+                // API retry configuration
+                this.maxRetries = 3;
+                this.retryDelay = 2000;
+                
                 // Load settings
                 this.settings = this.loadSettings();
                 this.ALERT_THRESHOLD_ORANGE = this.settings.orangeThreshold;
                 this.ALERT_THRESHOLD_RED = this.settings.redThreshold;
+                this.WEATHER_API.key = this.settings.weatherApiKey;
                 
                 console.log('📋 Załadowane ustawienia alertów:', this.settings);
+                updateDebugPanel(`Ustawienia: Orange=${this.ALERT_THRESHOLD_ORANGE}, Red=${this.ALERT_THRESHOLD_RED}`, 'info');
                 this.init();
             }
             
             loadSettings() {
                 const defaultSettings = {
                     orangeThreshold: 500,
-                    redThreshold: 300
+                    redThreshold: 300,
+                    weatherApiKey: null // User needs to provide their own
                 };
                 
                 try {
@@ -902,6 +948,7 @@
                     }
                 } catch (error) {
                     console.log('❌ Błąd wczytywania ustawień:', error);
+                    updateDebugPanel(`Błąd wczytywania ustawień: ${error.message}`, 'error');
                 }
                 
                 console.log('🔧 Używam domyślnych ustawień');
@@ -912,29 +959,35 @@
                 try {
                     const orangeInput = document.getElementById('orangeThreshold');
                     const redInput = document.getElementById('redThreshold');
+                    const weatherKeyInput = document.getElementById('weatherApiKey');
                     
                     const settings = {
                         orangeThreshold: parseInt(orangeInput.value) || 500,
-                        redThreshold: parseInt(redInput.value) || 300
+                        redThreshold: parseInt(redInput.value) || 300,
+                        weatherApiKey: weatherKeyInput.value.trim() || null
                     };
                     
                     console.log('💾 Zapisuję ustawienia alertów:', settings);
+                    updateDebugPanel(`Zapisuję ustawienia: Orange=${settings.orangeThreshold}, Red=${settings.redThreshold}`, 'info');
                     
                     // Validate settings
                     if (settings.redThreshold >= settings.orangeThreshold) {
                         this.showNotification('❌ Próg czerwony musi być mniejszy niż pomarańczowy');
+                        updateDebugPanel('BŁĄD: Niepoprawne progi alertów', 'error');
                         return;
                     }
                     
                     this.settings = settings;
                     this.ALERT_THRESHOLD_ORANGE = settings.orangeThreshold;
                     this.ALERT_THRESHOLD_RED = settings.redThreshold;
+                    this.WEATHER_API.key = settings.weatherApiKey;
                     
                     if (typeof Storage !== "undefined" && window.localStorage) {
                         localStorage.setItem('pse-oze-dashboard-settings', JSON.stringify(settings));
                     }
                     
                     this.showNotification('✅ Ustawienia alertów zapisane');
+                    updateDebugPanel('Ustawienia zapisane pomyślnie', 'success');
                     this.toggleSettings(); // Hide settings panel
                     
                     // Recalculate alerts with new thresholds
@@ -947,25 +1000,29 @@
                     console.log('💾 Ustawienia alertów zapisane:', settings);
                 } catch (error) {
                     console.log('❌ Błąd zapisu ustawień:', error);
+                    updateDebugPanel(`Błąd zapisu ustawień: ${error.message}`, 'error');
                     this.showNotification('❌ Błąd zapisu ustawień');
                 }
             }
             
             resetSettings() {
-                const defaultSettings = { orangeThreshold: 500, redThreshold: 300 };
+                const defaultSettings = { orangeThreshold: 500, redThreshold: 300, weatherApiKey: null };
                 
                 document.getElementById('orangeThreshold').value = defaultSettings.orangeThreshold;
                 document.getElementById('redThreshold').value = defaultSettings.redThreshold;
+                document.getElementById('weatherApiKey').value = '';
                 
                 this.settings = defaultSettings;
                 this.ALERT_THRESHOLD_ORANGE = defaultSettings.orangeThreshold;
                 this.ALERT_THRESHOLD_RED = defaultSettings.redThreshold;
+                this.WEATHER_API.key = null;
                 
                 if (typeof Storage !== "undefined" && window.localStorage) {
                     localStorage.removeItem('pse-oze-dashboard-settings');
                 }
                 
                 this.showNotification('↩️ Ustawienia alertów zresetowane');
+                updateDebugPanel('Ustawienia zresetowane do domyślnych', 'info');
             }
             
             toggleSettings() {
@@ -978,13 +1035,15 @@
                     // Update input values
                     document.getElementById('orangeThreshold').value = this.settings.orangeThreshold;
                     document.getElementById('redThreshold').value = this.settings.redThreshold;
+                    document.getElementById('weatherApiKey').value = this.settings.weatherApiKey || '';
                 } else {
                     panel.classList.remove('show');
                 }
             }
             
             async init() {
-                console.log('=== PSE OZE Dashboard REAL DATA Init Started ===');
+                console.log('=== PSE OZE Dashboard FIXED REAL DATA Init Started ===');
+                updateDebugPanel('Uruchamianie systemu...', 'info');
                 
                 // Start as online by default
                 this.isOnline = true;
@@ -1000,16 +1059,19 @@
                 
                 // Initial data load - REAL DATA
                 console.log('📊 Rozpoczynam ładowanie PRAWDZIWYCH danych z API PSE...');
+                updateDebugPanel('Rozpoczynam ładowanie danych z PSE API...', 'info');
                 await this.refreshData();
                 
                 // Auto refresh every 15 minutes (PRESERVED from Python)
                 console.log('⏰ Konfiguracja auto-odświeżania co 15 minut');
                 setInterval(() => {
                     console.log('⏰ Auto-odświeżanie - pobieranie REAL DATA');
+                    updateDebugPanel('Auto-odświeżanie...', 'info');
                     this.refreshData();
                 }, 15 * 60 * 1000);
                 
-                console.log('=== PSE OZE Dashboard REAL DATA Init Complete ===');
+                console.log('=== PSE OZE Dashboard FIXED REAL DATA Init Complete ===');
+                updateDebugPanel('Inicjalizacja zakończona pomyślnie', 'success');
             }
             
             setupDayNavigation() {
@@ -1032,6 +1094,7 @@
             
             switchDay(dayOffset) {
                 console.log(`📅 Przełączanie na dzień: ${dayOffset}`);
+                updateDebugPanel(`Przełączanie na dzień: ${dayOffset}`, 'info');
                 
                 // Update active button
                 document.querySelectorAll('.day-btn').forEach(btn => btn.classList.remove('active'));
@@ -1077,36 +1140,91 @@
                 return dayData;
             }
             
-            // REAL DATA FETCHING FUNCTIONS
-            async fetchPSEData(endpoint, params = '?$first=100') {
+            // IMPROVED DATA FETCHING WITH RETRY LOGIC
+            async fetchPSEData(endpoint, params = '?$first=100', retryCount = 0) {
                 try {
                     const url = `${endpoint}${params}`;
-                    console.log(`📡 REAL DATA: Fetching ${url}`);
+                    console.log(`📡 REAL DATA: Fetching ${url} (attempt ${retryCount + 1}/${this.maxRetries + 1})`);
+                    updateDebugPanel(`Pobieranie danych: ${endpoint.split('/').pop()}...`, 'info');
                     
-                    const response = await fetch(url);
+                    const response = await fetch(url, {
+                        method: 'GET',
+                        headers: {
+                            'Accept': 'application/json',
+                            'Cache-Control': 'no-cache'
+                        },
+                        mode: 'cors' // Explicitly set CORS mode
+                    });
+                    
                     if (response.ok) {
                         const data = await response.json();
                         console.log(`✅ REAL DATA: Received ${data.value?.length || 0} records from ${endpoint}`);
-                        return data.value || [];
+                        updateDebugPanel(`Otrzymano ${data.value?.length || 0} rekordów z ${endpoint.split('/').pop()}`, 'success');
+                        
+                        // Validate data structure
+                        if (!data.value || !Array.isArray(data.value)) {
+                            console.warn('⚠️ API returned data but not in expected format:', data);
+                            updateDebugPanel(`UWAGA: Nietypowa struktura danych z ${endpoint.split('/').pop()}`, 'error');
+                            return [];
+                        }
+                        
+                        return data.value;
                     } else {
                         console.log(`❌ REAL DATA: API error ${response.status} for ${endpoint}`);
+                        updateDebugPanel(`API error ${response.status} dla ${endpoint.split('/').pop()}`, 'error');
+                        
+                        // Retry on certain error codes
+                        if (retryCount < this.maxRetries && (response.status === 503 || response.status === 502 || response.status === 500)) {
+                            console.log(`🔄 Retrying in ${this.retryDelay}ms...`);
+                            await this.delay(this.retryDelay);
+                            return this.fetchPSEData(endpoint, params, retryCount + 1);
+                        }
+                        
                         return [];
                     }
                 } catch (error) {
                     console.error(`❌ REAL DATA: Fetch error for ${endpoint}:`, error);
+                    updateDebugPanel(`Błąd połączenia z ${endpoint.split('/').pop()}: ${error.message}`, 'error');
+                    
+                    // Retry on network errors
+                    if (retryCount < this.maxRetries) {
+                        console.log(`🔄 Retrying in ${this.retryDelay}ms...`);
+                        await this.delay(this.retryDelay);
+                        return this.fetchPSEData(endpoint, params, retryCount + 1);
+                    }
+                    
                     return [];
                 }
             }
             
+            async delay(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+            }
+            
             async fetchWeatherData() {
+                if (!this.WEATHER_API.key) {
+                    console.log('⚠️ Brak klucza Weather API - pomijam pobieranie pogody');
+                    updateDebugPanel('Brak klucza Weather API - skonfiguruj w ustawieniach', 'error');
+                    
+                    // Set placeholder weather data
+                    document.getElementById('weatherTemp').textContent = '--°C';
+                    document.getElementById('windSpeed').textContent = '-- km/h';
+                    document.getElementById('cloudCover').textContent = '--%';
+                    document.getElementById('weatherDescription').textContent = 'Brak klucza API';
+                    
+                    return null;
+                }
+                
                 try {
                     const url = `${this.WEATHER_API.baseUrl}?lat=${this.WEATHER_API.gdanskCoords.lat}&lon=${this.WEATHER_API.gdanskCoords.lon}&appid=${this.WEATHER_API.key}&units=metric&lang=pl`;
                     console.log('🌤️ REAL DATA: Fetching weather for Gdansk...');
+                    updateDebugPanel('Pobieranie danych pogodowych...', 'info');
                     
                     const response = await fetch(url);
                     if (response.ok) {
                         const data = await response.json();
                         console.log('✅ REAL DATA: Weather data received:', data);
+                        updateDebugPanel('Dane pogodowe pobrane pomyślnie', 'success');
                         this.weatherData = data;
                         this.updateWeatherDisplay();
                         return data;
@@ -1114,11 +1232,15 @@
                         console.log(`❌ REAL DATA: Weather API error ${response.status}`);
                         if (response.status === 401) {
                             console.log('💡 Tip: Get your free API key from https://openweathermap.org/api');
+                            updateDebugPanel('Nieprawidłowy klucz Weather API - sprawdź ustawienia', 'error');
+                        } else {
+                            updateDebugPanel(`Weather API error: ${response.status}`, 'error');
                         }
                         return null;
                     }
                 } catch (error) {
                     console.error('❌ REAL DATA: Weather fetch error:', error);
+                    updateDebugPanel(`Błąd pobierania pogody: ${error.message}`, 'error');
                     return null;
                 }
             }
@@ -1158,6 +1280,7 @@
             
             async fetchData() {
                 console.log('🌐 === FETCH REAL DATA START ===');
+                updateDebugPanel('Rozpoczynam pobieranie danych rezerw...', 'info');
                 const now = new Date();
                 const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
                 
@@ -1167,39 +1290,30 @@
                 console.log(`🕐 Pobieranie REAL DATA od ${startDate} do ${endDate}`);
                 
                 try {
-                    let url = `${this.API_ENDPOINTS.reserves}?$filter=plan_dtime ge '${startDate}' and plan_dtime le '${endDate}'&$orderby=plan_dtime&$first=200`;
+                    // Try with date filter first
+                    let params = `?$filter=plan_dtime ge '${startDate}' and plan_dtime le '${endDate}'&$orderby=plan_dtime&$first=200`;
                     console.log('📡 REAL DATA: Zapytanie API PSE z filtrem...');
                     
-                    let response;
-                    try {
-                        response = await fetch(url);
-                        console.log(`📡 REAL DATA: Status odpowiedzi z filtrem: ${response.status}`);
-                    } catch (fetchError) {
-                        console.log('❌ REAL DATA: Zapytanie z filtrem nieudane:', fetchError.message);
-                        console.log('📡 REAL DATA: Próbuję proste zapytanie API...');
-                        response = await fetch(this.API_ENDPOINTS.reserves + '?$first=200');
-                        console.log(`📡 REAL DATA: Status prostej odpowiedzi: ${response.status}`);
+                    let data = await this.fetchPSEData(this.API_ENDPOINTS.reserves, params);
+                    
+                    // If filtered request failed, try simple request
+                    if (data.length === 0) {
+                        console.log('📡 REAL DATA: Próbuję proste zapytanie API bez filtra...');
+                        updateDebugPanel('Filtr dat nie zadziałał - próbuję bez filtra...', 'info');
+                        data = await this.fetchPSEData(this.API_ENDPOINTS.reserves, '?$first=200');
                     }
                     
-                    if (response.ok) {
-                        console.log('✅ REAL DATA: Odpowiedź API OK, parsowanie JSON...');
-                        const data = await response.json();
-                        console.log('📊 REAL DATA: Surowe dane API:', { 
-                            hasValue: !!data.value, 
-                            valueLength: data.value?.length || 0
-                        });
-                        
-                        if (data.value && data.value.length > 0) {
-                            console.log('✅ SUKCES: Otrzymano REAL DATA z PSE API');
-                            return this.processData(data.value);
-                        } else {
-                            console.log('❌ REAL DATA: API zwróciło pustą tablicę data.value');
-                        }
+                    if (data && data.length > 0) {
+                        console.log('✅ SUKCES: Otrzymano REAL DATA z PSE API');
+                        updateDebugPanel(`Otrzymano ${data.length} rekordów z PSE API`, 'success');
+                        return this.processData(data);
                     } else {
-                        console.log(`❌ REAL DATA: API zwróciło status: ${response.status}`);
+                        console.log('❌ REAL DATA: API zwróciło pustą tablicę lub brak danych');
+                        updateDebugPanel('PSE API nie zwróciło danych - sprawdź połączenie', 'error');
                     }
                 } catch (error) {
                     console.error('❌ REAL DATA: Błąd pobierania danych:', error);
+                    updateDebugPanel(`Błąd pobierania danych: ${error.message}`, 'error');
                 }
                 
                 console.log('❌ REAL DATA: Pobieranie nieudane - zwracam pustą tablicę');
@@ -1219,10 +1333,20 @@
                 
                 if (!rawData || rawData.length === 0) {
                     console.log('❌ REAL DATA: Brak surowych danych do przetworzenia');
+                    updateDebugPanel('Brak danych do przetworzenia', 'error');
                     return [];
                 }
                 
                 console.log(`🔄 REAL DATA: Przetwarzanie ${rawData.length} surowych rekordów z PSE API`);
+                updateDebugPanel(`Przetwarzanie ${rawData.length} rekordów...`, 'info');
+                
+                // Log first few records to understand structure
+                if (rawData.length > 0) {
+                    console.log('📊 Przykład struktury danych PSE:', rawData[0]);
+                    const fields = Object.keys(rawData[0]);
+                    console.log('📊 Dostępne pola:', fields);
+                    updateDebugPanel(`Dostępne pola: ${fields.slice(0, 5).join(', ')}...`, 'info');
+                }
                 
                 // Generate full 72 hours from midnight today using REAL DATA
                 console.log('🕐 REAL DATA: Generowanie 72 godzin z rzeczywistymi danymi PSE...');
@@ -1233,7 +1357,7 @@
                     const dataIndex = i % Math.max(rawData.length, 1);
                     const item = rawData[dataIndex] || rawData[0];
                     
-                    if (item && item.req_pow_res) {
+                    if (item && item.req_pow_res !== null && item.req_pow_res !== undefined) {
                         let available = this.getAvailableReserve(item);
                         
                         if (available === 0 || isNaN(available)) {
@@ -1250,10 +1374,13 @@
                                 required: parseFloat(item.req_pow_res)
                             });
                         }
+                    } else {
+                        console.warn(`⚠️ Brak pola req_pow_res w rekordzie ${i}:`, item);
                     }
                 }
                 
                 console.log(`✅ REAL DATA: Wygenerowano ${processed.length} punktów z rzeczywistymi danymi PSE`);
+                updateDebugPanel(`Wygenerowano ${processed.length} punktów danych na 72h`, 'success');
                 
                 if (processed.length > 0) {
                     console.log(`📅 REAL DATA: Zakres czasowy: ${processed[0].timeStr} do ${processed[processed.length - 1].timeStr}`);
@@ -1263,11 +1390,23 @@
             }
             
             getAvailableReserve(item) {
-                if (item.surplus_cap_avail_tso !== null && item.surplus_cap_avail_tso !== undefined) {
-                    return parseFloat(item.surplus_cap_avail_tso);
-                } else if (item.avail_cap_gen_units_stor_prov !== null && item.avail_cap_gen_units_stor_prov !== undefined) {
-                    return parseFloat(item.avail_cap_gen_units_stor_prov);
+                // Try different field names that might contain available reserve data
+                const possibleFields = [
+                    'surplus_cap_avail_tso',
+                    'avail_cap_gen_units_stor_prov',
+                    'available_capacity',
+                    'surplus_capacity',
+                    'reserve_available'
+                ];
+                
+                for (const field of possibleFields) {
+                    if (item[field] !== null && item[field] !== undefined && !isNaN(parseFloat(item[field]))) {
+                        console.log(`📊 Using field '${field}' for available reserve: ${item[field]}`);
+                        return parseFloat(item[field]);
+                    }
                 }
+                
+                console.log('⚠️ No valid available reserve field found, using fallback calculation');
                 return 0;
             }
             
@@ -1361,9 +1500,11 @@
             
             drawChart(data) {
                 console.log(`📊 REAL DATA: Rysowanie wykresu z ${data.length} punktów PRAWDZIWYCH danych dla dnia offset ${this.currentDayOffset}`);
+                updateDebugPanel(`Rysowanie wykresu: ${data.length} punktów`, 'info');
                 
                 if (!data || data.length === 0) {
                     document.getElementById('mainChart').innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 200px; color: #8e8e93;">Brak danych do wyświetlenia</div>';
+                    updateDebugPanel('Brak danych do wyświetlenia na wykresie', 'error');
                     return;
                 }
                 
@@ -1409,7 +1550,7 @@
                         y: reserves,
                         type: 'scatter',
                         mode: 'lines',
-                        name: 'Rezerwa mocy (REAL DATA)',
+                        name: 'Rezerwa mocy (PSE API)',
                         line: { color: '#27ae60', width: 3 },
                         connectgaps: false
                     },
@@ -1493,8 +1634,10 @@
                 
                 Plotly.newPlot('mainChart', traces, layout, config).then(() => {
                     console.log('✅ REAL DATA: Wykres Plotly z prawdziwymi danymi utworzony pomyślnie');
+                    updateDebugPanel('Wykres utworzony pomyślnie', 'success');
                 }).catch(error => {
                     console.error('❌ REAL DATA: Błąd Plotly:', error);
+                    updateDebugPanel(`Błąd Plotly: ${error.message}`, 'error');
                 });
             }
             
@@ -1504,8 +1647,8 @@
                 const alertBadge = document.getElementById('alertBadge');
                 const alertsTitle = document.getElementById('alertsTitle');
                 
-                const dayNames = ['🚨 Alerty - Dziś (REAL DATA)', '🚨 Alerty - Jutro (REAL DATA)', '🚨 Alerty - Pojutrze (REAL DATA)'];
-                alertsTitle.textContent = dayNames[this.currentDayOffset] || '🚨 Alerty (REAL DATA)';
+                const dayNames = ['🚨 Alerty - Dziś (PSE API)', '🚨 Alerty - Jutro (PSE API)', '🚨 Alerty - Pojutrze (PSE API)'];
+                alertsTitle.textContent = dayNames[this.currentDayOffset] || '🚨 Alerty (PSE API)';
                 
                 const totalAlerts = alerts.orange.length + alerts.red.length;
                 
@@ -1518,7 +1661,7 @@
                     alerts.red.forEach(alert => {
                         const time = new Date(alert.time).toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' });
                         html += `<div class="alert-item alert-red">
-                            <strong>🔴 ${time}</strong> <small>(REAL DATA)</small><br>
+                            <strong>🔴 ${time}</strong> <small>(PSE API)</small><br>
                             Rezerwa: ${alert.reserve.toFixed(0)} MW | Wymagana: ${alert.required.toFixed(0)} MW<br>
                             <small>Margines: ${alert.difference.toFixed(0)} MW</small>
                         </div>`;
@@ -1527,16 +1670,18 @@
                     alerts.orange.forEach(alert => {
                         const time = new Date(alert.time).toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' });
                         html += `<div class="alert-item alert-orange">
-                            <strong>🟠 ${time}</strong> <small>(REAL DATA)</small><br>
+                            <strong>🟠 ${time}</strong> <small>(PSE API)</small><br>
                             Rezerwa: ${alert.reserve.toFixed(0)} MW | Wymagana: ${alert.required.toFixed(0)} MW<br>
                             <small>Margines: ${alert.difference.toFixed(0)} MW</small>
                         </div>`;
                     });
                     
                     alertsList.innerHTML = html;
+                    updateDebugPanel(`Znaleziono ${totalAlerts} alertów`, 'error');
                 } else {
                     alertBadge.style.display = 'none';
                     alertsList.innerHTML = '<div class="no-alerts">✅ Brak alertów w tym dniu<br><small>Dane z PSE API</small></div>';
+                    updateDebugPanel('Brak alertów - wszystko OK', 'success');
                 }
             }
             
@@ -1586,6 +1731,7 @@
                 document.getElementById('marginTrend').innerHTML = `<span>${statusIcon}</span> ${statusText}`;
                 
                 console.log('✅ REAL DATA: Quick stats zaktualizowane z rzeczywistymi danymi PSE');
+                updateDebugPanel(`Stats: ${currentReserve.toFixed(0)}MW/${currentRequired.toFixed(0)}MW, status: ${status}`, 'success');
             }
             
             updateStatus(status, message) {
@@ -1616,6 +1762,7 @@
                     refreshBtn.classList.add('loading');
                 }
                 this.updateStatus('offline', 'Pobieranie REAL DATA...');
+                updateDebugPanel('Rozpoczynam odświeżanie wszystkich danych...', 'info');
                 
                 try {
                     console.log('🔄 REFRESH: Rozpoczynam pobieranie wszystkich REAL DATA');
@@ -1631,6 +1778,7 @@
                     
                     if (reservesData && reservesData.length > 0) {
                         console.log(`✅ SUKCES REAL DATA: ${reservesData.length} punktów rezerw + weather + generation`);
+                        updateDebugPanel(`SUKCES: ${reservesData.length} punktów danych załadowano`, 'success');
                         
                         this.isOnline = true;
                         this.allData = reservesData;
@@ -1647,12 +1795,13 @@
                         // Update OZE cards with real data if available
                         this.updateOZEData(generationData);
                         
-                        this.updateStatus('online', `REAL DATA | ${reservesData.length} punktów`);
+                        this.updateStatus('online', `PSE API | ${reservesData.length} punktów`);
                         if (lastUpdateEl) {
                             lastUpdateEl.textContent = now.split(' ')[1].substring(0, 5);
                         }
                     } else {
                         console.log('❌ REAL DATA: Nie otrzymano danych rezerw');
+                        updateDebugPanel('BŁĄD: Nie otrzymano danych rezerw z PSE API', 'error');
                         this.isOnline = false;
                         this.updateStatus('offline', 'Brak danych PSE');
                         document.getElementById('mainChart').innerHTML = 
@@ -1661,6 +1810,7 @@
                     }
                 } catch (error) {
                     console.error('❌ REAL DATA: Błąd odświeżania:', error);
+                    updateDebugPanel(`BŁĄD odświeżania: ${error.message}`, 'error');
                     this.isOnline = false;
                     this.updateStatus('offline', 'Błąd połączenia');
                 } finally {
@@ -1673,42 +1823,76 @@
             updateOZEData(generationData) {
                 if (!generationData || generationData.length === 0) {
                     console.log('⚠️ Brak danych generacji OZE');
+                    updateDebugPanel('Brak danych generacji OZE', 'error');
                     // Set placeholder values
                     document.getElementById('windPower').textContent = '-- MW';
                     document.getElementById('solarPower').textContent = '-- MW';
                     document.getElementById('ozePercentage').textContent = '--%';
                     
                     // Update trends
-                    document.getElementById('windTrend').innerHTML = '<span>📡</span> Ładowanie PSE API...';
-                    document.getElementById('solarTrend').innerHTML = '<span>☀️</span> Ładowanie PSE API...';
-                    document.getElementById('ozeTrend').innerHTML = '<span>🌱</span> Ładowanie PSE API...';
+                    document.getElementById('windTrend').innerHTML = '<span>📡</span> Brak danych PSE API';
+                    document.getElementById('solarTrend').innerHTML = '<span>☀️</span> Brak danych PSE API';
+                    document.getElementById('ozeTrend').innerHTML = '<span>🌱</span> Brak danych PSE API';
                     return;
                 }
                 
                 console.log(`🌱 REAL DATA: Aktualizuję dane OZE z ${generationData.length} rekordów PSE`);
+                updateDebugPanel(`Przetwarzanie ${generationData.length} rekordów generacji...`, 'info');
+                
+                // Log generation data structure for debugging
+                if (generationData.length > 0) {
+                    console.log('📊 Przykład struktury danych generacji:', generationData[0]);
+                    const fields = Object.keys(generationData[0]);
+                    console.log('📊 Dostępne pola generacji:', fields);
+                }
                 
                 // Extract OZE data from PSE generation data
-                // Note: This depends on the actual structure of gen-jw response
-                // For now, using estimated values based on typical Polish energy mix
                 let windPower = 0;
                 let solarPower = 0;
                 let totalOZE = 0;
                 
                 // Try to extract real values from PSE data structure
+                // Try various field names that might contain fuel type and generation data
+                const possibleFuelFields = ['fuel_type', 'type', 'source', 'technology'];
+                const possibleGenerationFields = ['generation', 'power', 'output', 'production'];
+                
                 generationData.forEach(item => {
-                    // These field names are based on PSE API documentation
-                    // Adjust according to actual API response structure
-                    if (item.fuel_type === 'WIATR' || item.fuel_type === 'Wind') {
-                        windPower += parseFloat(item.generation) || 0;
+                    let fuelType = null;
+                    let generation = 0;
+                    
+                    // Find fuel type field
+                    for (const field of possibleFuelFields) {
+                        if (item[field]) {
+                            fuelType = item[field].toString().toUpperCase();
+                            break;
+                        }
                     }
-                    if (item.fuel_type === 'PV' || item.fuel_type === 'Solar') {
-                        solarPower += parseFloat(item.generation) || 0;
+                    
+                    // Find generation field
+                    for (const field of possibleGenerationFields) {
+                        if (item[field] !== null && item[field] !== undefined && !isNaN(parseFloat(item[field]))) {
+                            generation = parseFloat(item[field]);
+                            break;
+                        }
+                    }
+                    
+                    if (fuelType && generation > 0) {
+                        if (fuelType.includes('WIATR') || fuelType.includes('WIND')) {
+                            windPower += generation;
+                            console.log(`🌪️ Found wind power: ${generation} MW`);
+                        }
+                        if (fuelType.includes('PV') || fuelType.includes('SOLAR') || fuelType.includes('SŁONECZ')) {
+                            solarPower += generation;
+                            console.log(`☀️ Found solar power: ${generation} MW`);
+                        }
                     }
                 });
                 
                 // If no specific OZE data found, estimate based on typical Polish mix
                 if (windPower === 0 && solarPower === 0) {
                     console.log('⚠️ Brak szczegółowych danych OZE w gen-jw, używam estymacji');
+                    updateDebugPanel('Brak rzeczywistych danych OZE - używam estymacji', 'error');
+                    
                     // Current typical values for Poland (July 2025)
                     windPower = Math.random() * 4000 + 2000;  // 2-6 GW wind capacity
                     solarPower = Math.random() * 8000 + 1000; // 1-9 GW solar capacity (day/night cycle)
@@ -1721,6 +1905,8 @@
                         const solarFactor = Math.sin(((hour - 6) / 14) * Math.PI); // Peak at midday
                         solarPower *= solarFactor;
                     }
+                } else {
+                    updateDebugPanel(`Dane OZE: Wiatr=${windPower.toFixed(0)}MW, Solar=${solarPower.toFixed(0)}MW`, 'success');
                 }
                 
                 totalOZE = windPower + solarPower;
@@ -1754,6 +1940,7 @@
             currentTab = tabName;
             
             console.log(`📱 Switched to tab: ${tabName}`);
+            updateDebugPanel(`Przełączono na zakładkę: ${tabName}`, 'info');
         }
         
         // Global functions for onclick handlers
@@ -1789,23 +1976,26 @@
         
         // Initialize app when DOM is loaded
         document.addEventListener('DOMContentLoaded', () => {
-            console.log('=== PSE OZE Dashboard REAL DATA Initializing ===');
+            console.log('=== PSE OZE Dashboard FIXED REAL DATA Initializing ===');
             console.log(`📱 Version: ${APP_VERSION} (build: ${APP_BUILD})`);
             console.log('🌍 Location:', window.location.href);
             console.log('📡 Weather API target: Gdansk, Poland');
             console.log('🔌 PSE API endpoints: reserves, generation, load, prices');
             
+            updateDebugPanel('Inicjalizacja aplikacji...', 'info');
+            
             try {
-                console.log('🚀 Tworzenie instancji PSEApp z REAL DATA integration...');
+                console.log('🚀 Tworzenie instancji PSEApp z FIXED REAL DATA integration...');
                 app = new PSEApp();
-                console.log('✅ Instancja PSEApp z REAL DATA utworzona pomyślnie');
+                console.log('✅ Instancja PSEApp z FIXED REAL DATA utworzona pomyślnie');
                 
                 // Debug version in app
                 app.version = APP_VERSION;
                 app.build = APP_BUILD;
                 
             } catch (error) {
-                console.error('❌ Nie udało się utworzyć PSEApp REAL DATA:', error);
+                console.error('❌ Nie udało się utworzyć PSEApp FIXED REAL DATA:', error);
+                updateDebugPanel(`BŁĄD inicjalizacji: ${error.message}`, 'error');
                 
                 const chart = document.getElementById('mainChart');
                 if (chart) {
@@ -1822,7 +2012,7 @@
             }
         });
         
-        console.log('🌱 PSE OZE Dashboard with REAL DATA integration loaded!');
+        console.log('🌱 PSE OZE Dashboard with FIXED REAL DATA integration loaded!');
     </script>
 </body>
 </html>
