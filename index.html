@@ -2484,8 +2484,169 @@ const data = [{
             this.setOZEPlaceholders('Błąd przetwarzania OZE');
         }
     } // ← KONIEC METODY
-
-try {
+// ✅ JEDNA POPRAWNA METODA updateRealOZEData
+    updateRealOZEData(ozeData) {
+        try {
+            console.log('🌱 Processing REAL OZE data from PSE API:', ozeData.length, 'records');
+            updateDebugPanel(`Przetwarzanie ${ozeData.length} rekordów OZE...`, 'info');
+            
+            if (ozeData.length > 0) {
+                console.log('📊 Sample OZE data structure:', ozeData[0]);
+                const fields = Object.keys(ozeData[0]);
+                console.log('📊 Dostępne pola OZE:', fields);
+                updateDebugPanel(`Pola OZE: ${fields.slice(0, 5).join(', ')}...`, 'info');
+            }
+            
+            let windPower = 0;
+            let solarPower = 0;
+            let biomassPower = 0;
+            let hydroPower = 0;
+            let foundRealData = false;
+            
+            ozeData.forEach((item, index) => {
+                try {
+                    const possibleTypeFields = [
+                        'resource_name', 'resource_code', 'fuel_type', 'technology',
+                        'source_name', 'unit_name', 'type_name'
+                    ];
+                    
+                    const possiblePowerFields = [
+                        'actual_power', 'current_power', 'power_output', 'generation',
+                        'capacity', 'output', 'power', 'moc_aktualna', 'generacja_aktualna'
+                    ];
+                    
+                    let resourceType = null;
+                    let power = 0;
+                    
+                    for (const field of possibleTypeFields) {
+                        if (item[field]) {
+                            resourceType = item[field].toString().toUpperCase();
+                            if (index < 3) console.log(`🔍 Found resource type in '${field}': ${resourceType}`);
+                            break;
+                        }
+                    }
+                    
+                    for (const field of possiblePowerFields) {
+                        const value = item[field];
+                        if (value !== null && value !== undefined && !isNaN(parseFloat(value))) {
+                            power = parseFloat(value);
+                            if (index < 3) console.log(`🔍 Found power in '${field}': ${power} MW`);
+                            break;
+                        }
+                    }
+                    
+                    if (resourceType && power > 0) {
+                        foundRealData = true;
+                        
+                        if (resourceType.includes('WIATR') || resourceType.includes('WIND') ||
+                            resourceType.includes('WIAT') || resourceType.includes('EOLIC')) {
+                            windPower += power;
+                            if (index < 5) console.log(`🌪️ WIND: +${power} MW (total: ${windPower})`);
+                        } 
+                        else if (resourceType.includes('PV') || resourceType.includes('SOLAR') || 
+                                 resourceType.includes('SŁONECZ') || resourceType.includes('FOTOWOLT') ||
+                                 resourceType.includes('PHOTOVOLT')) {
+                            solarPower += power;
+                            if (index < 5) console.log(`☀️ SOLAR: +${power} MW (total: ${solarPower})`);
+                        } 
+                        else if (resourceType.includes('BIOMASA') || resourceType.includes('BIOMASS') || 
+                                 resourceType.includes('BIOGAS') || resourceType.includes('BIO_')) {
+                            biomassPower += power;
+                            if (index < 5) console.log(`🌿 BIOMASS: +${power} MW (total: ${biomassPower})`);
+                        } 
+                        else if (resourceType.includes('HYDRO') || resourceType.includes('WODNA') ||
+                                 resourceType.includes('WATER') || resourceType.includes('MEW')) {
+                            hydroPower += power;
+                            if (index < 5) console.log(`💧 HYDRO: +${power} MW (total: ${hydroPower})`);
+                        }
+                        else {
+                            if (index < 3) {
+                                console.log(`❓ Unknown OZE type: "${resourceType}" with ${power} MW`);
+                            }
+                        }
+                    }
+                } catch (itemError) {
+                    console.warn(`⚠️ Error processing OZE record ${index}:`, itemError);
+                }
+            });
+            
+            if (foundRealData) {
+                const totalOZE = windPower + solarPower + biomassPower + hydroPower;
+                const totalGeneration = 25000;
+                const ozePercentage = Math.min((totalOZE / totalGeneration) * 100, 100);
+                
+                console.log('✅ REAL OZE data processed successfully:', {
+                    wind: windPower.toFixed(0),
+                    solar: solarPower.toFixed(0),
+                    biomass: biomassPower.toFixed(0),
+                    hydro: hydroPower.toFixed(0),
+                    total: totalOZE.toFixed(0),
+                    percentage: ozePercentage.toFixed(1)
+                });
+                
+                this.setOZEValues(windPower, solarPower, ozePercentage, 'PRAWDZIWE PSE OZE API');
+                updateDebugPanel(`OZE SUCCESS: W=${windPower.toFixed(0)}MW, S=${solarPower.toFixed(0)}MW, ${ozePercentage.toFixed(1)}%`, 'success');
+            } else {
+                console.log('⚠️ No valid OZE data found - showing structure for debugging');
+                
+                if (ozeData.length > 0) {
+                    console.log('🔧 DEBUG: First OZE record structure:');
+                    console.log(JSON.stringify(ozeData[0], null, 2));
+                    updateDebugPanel(`DEBUG: Sprawdź konsolę - struktura danych OZE`, 'error');
+                }
+                
+                this.setOZEPlaceholders('Struktura danych wymaga analizy');
+            }
+            
+        } catch (error) {
+            console.error('❌ Error processing REAL OZE data:', error);
+            updateDebugPanel(`Błąd przetwarzania OZE: ${error.message}`, 'error');
+            this.setOZEPlaceholders('Błąd przetwarzania OZE');
+        }
+    }
+    
+    // ✅ NASTĘPNA METODA KLASY (jeśli istnieje)
+    setOZEValues(windPower, solarPower, ozePercentage, dataSource) {
+        try {
+            const windEl = document.getElementById('windPower');
+            const solarEl = document.getElementById('solarPower');
+            const ozeEl = document.getElementById('ozePercentage');
+            const windTrendEl = document.getElementById('windTrend');
+            const solarTrendEl = document.getElementById('solarTrend');
+            const ozeTrendEl = document.getElementById('ozeTrend');
+            
+            if (windEl) windEl.textContent = `${windPower.toFixed(0)} MW`;
+            if (solarEl) solarEl.textContent = `${solarPower.toFixed(0)} MW`;
+            if (ozeEl) ozeEl.textContent = `${ozePercentage.toFixed(1)}%`;
+            
+            if (windTrendEl) windTrendEl.innerHTML = `<span>💨</span> ${dataSource}`;
+            if (solarTrendEl) solarTrendEl.innerHTML = `<span>☀️</span> ${dataSource}`;
+            if (ozeTrendEl) ozeTrendEl.innerHTML = `<span>📈</span> ${ozePercentage.toFixed(1)}% miksu`;
+        } catch (error) {
+            console.warn('⚠️ Błąd aktualizacji elementów OZE:', error);
+        }
+    }
+    
+    setOZEPlaceholders(reason) {
+        try {
+            const windEl = document.getElementById('windPower');
+            const solarEl = document.getElementById('solarPower');
+            const ozeEl = document.getElementById('ozePercentage');
+            const windTrendEl = document.getElementById('windTrend');
+            const solarTrendEl = document.getElementById('solarTrend');
+            const ozeTrendEl = document.getElementById('ozeTrend');
+            
+            if (windEl) windEl.textContent = '-- MW';
+            if (solarEl) solarEl.textContent = '-- MW';
+            if (ozeEl) ozeEl.textContent = '--%';
+            
+            if (windTrendEl) windTrendEl.innerHTML = `<span>📡</span> ${reason}`;
+            if (solarTrendEl) solarTrendEl.innerHTML = `<span>☀️</span> ${reason}`;
+            if (ozeTrendEl) ozeTrendEl.innerHTML = `<span>🌱</span> ${reason}`;
+        } catch (error) {
+            console.warn('⚠️ Błąd ustawiania placeholderów OZE:', error);
+        }
+    }
         console.log('🌱 Processing REAL OZE data from PSE API:', ozeData.length, 'records');
         updateDebugPanel(`Przetwarzanie ${ozeData.length} rekordów OZE...`, 'info');
         
@@ -3133,6 +3294,59 @@ function resetSettings() {
         app.resetSettings();
     }
 }
+} // ← KONIEC KLASY PSEApp
+
+// ✅ FUNKCJE GLOBALNE dla onclick handlers
+function switchTab(tabName) {
+    if (!app) {
+        console.log('App not ready yet');
+        return;
+    }
+    
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    const activeBtn = document.querySelector(`button[onclick*="'${tabName}'"]`);
+    if (activeBtn) activeBtn.classList.add('active');
+    
+    document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+    const activeContent = document.getElementById(tabName);
+    if (activeContent) activeContent.classList.add('active');
+    
+    currentTab = tabName;
+    console.log(`📱 Switched to tab: ${tabName}`);
+    updateDebugPanel(`Przełączono na zakładkę: ${tabName}`, 'info');
+}
+
+function switchDay(dayOffset) {
+    if (app) {
+        app.switchDay(dayOffset);
+    }
+}
+
+function refreshAllData() {
+    if (app) {
+        app.refreshData();
+    }
+}
+
+function toggleSettings() {
+    if (app) {
+        app.toggleSettings();
+    }
+}
+
+function saveSettings() {
+    if (app) {
+        app.saveSettings();
+    }
+}
+
+function resetSettings() {
+    if (app) {
+        app.resetSettings();
+    }
+}
+
+console.log('🌱 Global functions loaded successfully');
     </script>
 </body>
 </html>
